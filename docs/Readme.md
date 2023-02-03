@@ -2,12 +2,12 @@
 
 see glacsweb.org
 
-##Circuitpython
+## Circuitpython
 designed to run on circuitpython - tested on version 7.x.x
 
-##Hardware
+## Hardware
 Uses Thing Plus SAMD51, Sparkfun M9P GPS, Adafruit FONA and Sparkfun SWARM. Also DIGI XB8X-DMUS-001 radio.
 
-##Docs
+## Docs
 To make html docs run `./make.bat html`.
 Other formats can be made in a very similar way (run `make.bat` for options)
