@@ -11,9 +11,13 @@ import board
 
 logger = logging.getLogger("DEVICE")
 
-# Gloabls
+# Globals
+# needed by adafruit GSM library?
 GSM_ENABLE_PIN: DigitalInOut = DigitalInOut(board.A0)
 GSM_ENABLE_PIN.switch_to_output()
+GSM_KEY: DigitalInOut = DigitalInOut(board.D12)
+GSM_KEY.switch_to_output()
+GSM_KEY = False
 GSM_ENABLE_PIN = False
 
 def enable_fona():
@@ -22,12 +26,9 @@ def enable_fona():
     GSM_ENABLE_PIN.value = True
 
 def shutdown():
-    """Resets timer, causing shutdown of device
+    """Resets RTC alarm, causing poweroff of device
     """
     logger.info("Device shutting down!")
     RTC_DEVICE.alarm2_status = False
     RTC_DEVICE.alarm1_status = False
 
-#ACTUAL MAIN CODE THAT RUNS ON IMPORT
-# Initialise the device
-#except we did that up top so :shrug:
