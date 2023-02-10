@@ -1,4 +1,5 @@
 """Module that extends busio's UART with async/await functionality.
+sets the serial baud rate (used by radio and GPIO) so must match their config
 """
 
 import busio
@@ -44,8 +45,8 @@ class AsyncUART(busio.UART):
     async def async_read_forever(self, bytes_requested: int | None = None) -> bytes | None:
         """Reads until it gets ``bytes_requested`` number of bytes.
         Waits forever if ``bytes_requested`` is None, you have been warned.
-        Returns None if you request 0 bytes like a smartass.
-        Does not actually read anything until there is enough bytes available.
+        Returns None if you request 0 bytes
+        Does not actually read anything until there are enough bytes available.
 
         :param bytes_requested: Number of bytes to read before stopping, defaults to None
         :type bytes_requested: int | None, optional
