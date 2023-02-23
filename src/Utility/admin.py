@@ -1,8 +1,17 @@
 import os
 import board
+import busio
 import adafruit_mcp9808 # replaced with tmp117
 import adafruit_lc709203f
 from adafruit_datetime import datetime
+
+# TX, RX
+RADIO_UART = busio.UART(board.D11, board.D10, baudrate=9600, receiver_buffer_size=2048) 
+''' Radio UART for communications'''
+GPS_UART = busio.UART(board.A1, board.A2, baudrate=115200, receiver_buffer_size=2048)
+''' GPS NMEA UART for communications '''
+RTCM3_UART = busio.UART(board.TX, board.RX, baudrate=115200, receiver_buffer_size=2048)
+''' GPS RTCM3 UART '''
 
 def diskfree():
     info = os.statvfs("/")
@@ -35,6 +44,7 @@ def gps_test():
 
 def radio_test():
     print("Checking uart connection")
+    
     pass
 
 def temp():
@@ -57,6 +67,7 @@ def admincmd(c):
         print(f"the datetime is ", datetime.now())
     elif c == "2":
         print("printing GPS")
+        gps_test()
     elif c == "3":
         print(f"disk free: ",diskfree())
     elif c == "4":
@@ -66,7 +77,8 @@ def admincmd(c):
     elif c == "6":
         print(voltagereadings())
     elif c == "7":
-        print(radio_test())
+        # print(radio_test())
+        radio_test()
     else:   
         print("command not found")
 
