@@ -13,7 +13,7 @@ def diskfree():
     return(info[0] * info[3])
     print(f"bytes free: ",diskfree())   # redundant
 
-def printdataentries():
+def print_data_entries():
     """ Check if directory exists """
     PATH = "/data_entries"
     
@@ -24,7 +24,7 @@ def printdataentries():
         print("Directory doesn't exist, create one.")
         # os.mkdir(PATH) # stuck in read-only mode so won't work
         pass
-def voltagereadings():
+def voltage_readings():
     i2c = board.STEMMA_I2C()
     lc7 = adafruit_lc709203f.LC709203F(i2c)
     try:
@@ -46,10 +46,13 @@ def radio_test():
     try:
         RADIO_UART = busio.UART(board.D11, board.D10, baudrate=9600, receiver_buffer_size=2048) 
         ''' Radio UART for communications'''
-        if RADIO_UART is not None:
-            print(RADIO_UART.readline)
-        else:
-            print("Nothing in Buffer")
+        counter = 10
+        while counter > 0:
+            if RADIO_UART is not None:
+                print(RADIO_UART.readline())
+            else:
+                print("Nothing in Buffer")
+            counter -= 1
     except BaseException:
         print("Radio not connected.\n Check pins and SMA antenna connections.")
         pass
@@ -59,7 +62,7 @@ def temp():
     mcp = adafruit_mcp9808.MCP9808(i2c)
     print("%.2f C" % mcp.temperature)
 
-def adminmenu():
+def admin_menu():
     print("1\tdatetime")
     print("2\tGPS test")
     print("3\tDisk free")
@@ -78,11 +81,11 @@ def admincmd(c):
     elif c == "3":
         print(f"disk free: ",diskfree())
     elif c == "4":
-        print(f"data entries: ",printdataentries())
+        print(f"data entries: ",print_data_entries())
     elif c == "5":
         print(temp())
     elif c == "6":
-        print(voltagereadings())
+        print(voltage_readings())
     elif c == "7":
         # print(radio_test())
         radio_test()
