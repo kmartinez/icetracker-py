@@ -6,12 +6,7 @@ import adafruit_lc709203f
 from adafruit_datetime import datetime
 
 # TX, RX
-RADIO_UART = busio.UART(board.D11, board.D10, baudrate=9600, receiver_buffer_size=2048) 
-''' Radio UART for communications'''
-GPS_UART = busio.UART(board.A1, board.A2, baudrate=115200, receiver_buffer_size=2048)
-''' GPS NMEA UART for communications '''
-RTCM3_UART = busio.UART(board.TX, board.RX, baudrate=115200, receiver_buffer_size=2048)
-''' GPS RTCM3 UART '''
+
 
 def diskfree():
     info = os.statvfs("/")
@@ -40,12 +35,24 @@ def voltagereadings():
 
 def gps_test():
     print("Checking uart connection")
+    GPS_UART = busio.UART(board.A1, board.A2, baudrate=115200, receiver_buffer_size=2048)
+    ''' GPS NMEA UART for communications '''
+    RTCM3_UART = busio.UART(board.TX, board.RX, baudrate=115200, receiver_buffer_size=2048)
+    ''' GPS RTCM3 UART '''
     pass
 
 def radio_test():
     print("Checking uart connection")
-    
-    pass
+    try:
+        RADIO_UART = busio.UART(board.D11, board.D10, baudrate=9600, receiver_buffer_size=2048) 
+        ''' Radio UART for communications'''
+        if RADIO_UART is not None:
+            print(RADIO_UART.readline)
+        else:
+            print("Nothing in Buffer")
+    except BaseException:
+        print("Radio not connected.\n Check pins and SMA antenna connections.")
+        pass
 
 def temp():
     i2c = board.I2C()  # uses board.SCL and board.SDA
