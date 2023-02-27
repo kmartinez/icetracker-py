@@ -1,12 +1,16 @@
 import os
 import board
 import busio
+from analogio import AnalogIn
+import time
 import adafruit_mcp9808 # replaced with tmp117
 import adafruit_lc709203f
 from adafruit_datetime import datetime
 
 # TX, RX
-
+i2c = board.STEMMA_I2C()
+pin_ip = AnalogIn(board.A3)
+lc7 = adafruit_lc709203f.LC709203F(i2c)
 
 def diskfree():
     info = os.statvfs("/")
@@ -24,14 +28,23 @@ def print_data_entries():
         print("Directory doesn't exist, create one.")
         # os.mkdir(PATH) # stuck in read-only mode so won't work
         pass
+
+    """ Nodes could have been damaged due to using the wrong polarity? """
 def voltage_readings():
-    i2c = board.STEMMA_I2C()
-    lc7 = adafruit_lc709203f.LC709203F(i2c)
-    try:
-        print("Battery Voltage: %0.2fV" % lc7.cell_voltage)
-    except BaseException:
-        print("Sensor not connected.")
-        pass
+    global lc7 
+    # TODO: cannot use this sensor, maybe faulty? Sensor will be replaced with the same
+    # input method used previously with a couple of resistors in the form of a potential divider.
+    # Will be reading the inputs via an ADC input, just need to decide on the actual pin to use.
+    """ DEPRECATED AT THE MOMENT """
+    # try:
+    print("Battery Voltage: %0.3fV" % (1+lc7.cell_voltage))
+    print("Battery Percentage: %0.1F %%" %lc7.cell_percent)
+    # except BaseException:
+    #     print("Sensor not connected.")
+    #     pass
+    # return ("Vbat: {.2f}V".format((pin_ip.value * 3.3) / 65536))
+    """ BAT V readings are inconsistent """
+    # print((pin.value * 3.3) / 65536)
 
 def gps_test():
     print("Checking uart connection")
@@ -85,7 +98,10 @@ def admincmd(c):
     elif c == "5":
         print(temp())
     elif c == "6":
-        print(voltage_readings())
+        while True:
+            # print(voltage_readings())
+            voltage_readings()
+            time.sleep(1)
     elif c == "7":
         # print(radio_test())
         radio_test()
