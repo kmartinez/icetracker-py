@@ -30,21 +30,21 @@ def print_data_entries():
         pass
 
     """ Nodes could have been damaged due to using the wrong polarity? """
-def voltage_readings():
+def voltage_readings(pin):
     global lc7 
     # TODO: cannot use this sensor, maybe faulty? Sensor will be replaced with the same
     # input method used previously with a couple of resistors in the form of a potential divider.
     # Will be reading the inputs via an ADC input, just need to decide on the actual pin to use.
     """ DEPRECATED AT THE MOMENT """
     # try:
-    print("Battery Voltage: %0.3fV" % (1+lc7.cell_voltage))
-    print("Battery Percentage: %0.1F %%" %lc7.cell_percent)
+    # print("Battery Voltage: %0.3fV" % (1+lc7.cell_voltage))
+    # print("Battery Percentage: %0.1F %%" %lc7.cell_percent)
     # except BaseException:
     #     print("Sensor not connected.")
     #     pass
     # return ("Vbat: {.2f}V".format((pin_ip.value * 3.3) / 65536))
     """ BAT V readings are inconsistent """
-    # print((pin.value * 3.3) / 65536)
+    print((pin.value * 3.3) / 65536)
 
 def gps_test():
     print("Checking uart connection")
@@ -52,7 +52,15 @@ def gps_test():
     ''' GPS NMEA UART for communications '''
     RTCM3_UART = busio.UART(board.TX, board.RX, baudrate=115200, receiver_buffer_size=2048)
     ''' GPS RTCM3 UART '''
-    pass
+
+    try:
+        if GPS_UART is not None:
+            print(GPS_UART.readline())
+        else:
+                print("Nothing in Buffer")
+    except BaseException:
+        print("GPS not detected")
+        pass
 
 def radio_test():
     print("Checking uart connection")
@@ -100,7 +108,7 @@ def admincmd(c):
     elif c == "6":
         while True:
             # print(voltage_readings())
-            voltage_readings()
+            voltage_readings(pin_ip)
             time.sleep(1)
     elif c == "7":
         # print(radio_test())
