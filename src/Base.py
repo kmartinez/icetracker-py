@@ -123,46 +123,52 @@ if __name__ == "__main__":
     # otherwise, turn off.
     try:
         logger.info("Checking current time")
-        # loop.run_until_complete() # may need to feed watchdog here...
-        if GPS_DEVICE.timestamp_utc[3] in COMMS_TIME and GPS_DEVICE.timestamp_utc[4] < 10:
+        # clock_calibrator updates time on RTC # may need to feed watchdog here...
+        # use clock calibrator, make sure that watchdog has been fed through it, and then use RTC
+        '''Can utilise a similar script from clock_calibrator RTC_DEVICE fails to update'''
+        # while GPS_DEVICE.timestamp_utc == None:
+        #     while not GPS_DEVICE.update():
+        #         pass
+       
+        if RTC_DEVICE.datetime[3] in COMMS_TIME and RTC_DEVICE.datetime[4] < 10:
             logger.info('Device meets Comms Time - \n Enabling GSM.')
 
-        enable_fona()
-        fona = FONA(GSM_UART, GSM_RST_PIN, debug=True)
-        logger.info("FONA initialized")
-        logger.debug(f"FONA VERSION: fona.version")
+            enable_fona()
+            fona = FONA(GSM_UART, GSM_RST_PIN, debug=True)
+            logger.info("FONA initialized")
+            logger.debug(f"FONA VERSION: fona.version")
 
-        network = network.CELLULAR(
-            fona, (SECRETS["apn"], SECRETS["apn_username"], SECRETS["apn_password"])
-        )
+            network = network.CELLULAR(
+                fona, (SECRETS["apn"], SECRETS["apn_username"], SECRETS["apn_password"])
+            )
 
-        while not network.is_attached:
-            logger.info("Attaching to network...")
-            time.sleep(0.5)
-        logger.info("Attached!")
+            while not network.is_attached:
+                logger.info("Attaching to network...")
+                time.sleep(0.5)
+            logger.info("Attached!")
 
-        while not network.is_connected:
-            logger.info("Connecting to network...")
-            network.connect()
-            time.sleep(0.5)
-        logger.info("Network Connected!")
+            while not network.is_connected:
+                logger.info("Connecting to network...")
+                network.connect()
+                time.sleep(0.5)
+            logger.info("Network Connected!")
 
-        logger.info(f"My Local IP address is: {fona.local_ip}")
+            logger.info(f"My Local IP address is: {fona.local_ip}")
 
-        # Initialize a requests object with a socket and cellular interface
-        requests.set_socket(cellular_socket, fona)
+            # Initialize a requests object with a socket and cellular interface
+            requests.set_socket(cellular_socket, fona)
 
-        http_payload = []
-        data_paths = os.listdir("/data_entries/")
-        for path in data_paths:
-            with open("/data_entries/" + path, "r") as file:
-                try:
-                    http_payload.append(json.loads(file.readline()))
-                except:
-                    logger.warning(f"Invalid saved data found at /data_entries/{path}")
-                    #os.remove("/data_entries/" + path) #This could be dangerous - DON'T DO!
-                #TODO: RAM limit
-        logger.debug(f"HTTP_PAYLOAD: {http_payload}")
+            http_payload = []
+            data_paths = os.listdir("/data_entries/")
+            for path in data_paths:
+                with open("/data_entries/" + path, "r") as file:
+                    try:
+                        http_payload.append(json.loads(file.readline()))
+                    except:
+                        logger.warning(f"Invalid saved data found at /data_entries/{path}")
+                        #os.remove("/data_entries/" + path) #This could be dangerous - DON'T DO!
+                    #TODO: RAM limit
+            logger.debug(f"HTTP_PAYLOAD: {http_payload}")
     except ValueError:
         logger.critical("Time not met. Logging data and shutting down device.")
         shutdown()
