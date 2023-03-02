@@ -33,6 +33,12 @@ GSM_RST_PIN: digitalio.DigitalInOut = digitalio.DigitalInOut(board.D5)
 
 #this is a global variable so i can still get the data even if the rover loop times out
 finished_rovers: dict[int, bool] = {}
+# when to send data
+COMMS_TIME = [12]
+
+# get current time from GPS or RTC? Probably best to be GPS...
+# datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc))
+
 
 async def clock_calibrator():
     """Task that waits until the GPS has a timestamp and then calibrates the RTC using GPS time
@@ -112,42 +118,54 @@ if __name__ == "__main__":
         logger.warning("Async tasks timed out! Continuing with any remaining data")
         pass #Don't care, we have data, just send what we got
 
-    enable_fona()
-    fona = FONA(GSM_UART, GSM_RST_PIN, debug=True)
-    logger.info("FONA initialized")
-    logger.debug(f"FONA VERSION: fona.version")
+    #TODO: include a checker for a default COMMS_TIME - reference ->
+    # if time on the RTC matches that of COMMS_TIME, proceed to the section of the code
+    # otherwise, turn off.
+    try:
+        logger.info("Checking current time")
+        # loop.run_until_complete() # may need to feed watchdog here...
+        if GPS_DEVICE.timestamp_utc[3] in COMMS_TIME and GPS_DEVICE.timestamp_utc[4] < 10:
+            logger.info('Device meets Comms Time - \n Enabling GSM.')
 
-    network = network.CELLULAR(
-        fona, (SECRETS["apn"], SECRETS["apn_username"], SECRETS["apn_password"])
-    )
+        enable_fona()
+        fona = FONA(GSM_UART, GSM_RST_PIN, debug=True)
+        logger.info("FONA initialized")
+        logger.debug(f"FONA VERSION: fona.version")
 
-    while not network.is_attached:
-        logger.info("Attaching to network...")
-        time.sleep(0.5)
-    logger.info("Attached!")
+        network = network.CELLULAR(
+            fona, (SECRETS["apn"], SECRETS["apn_username"], SECRETS["apn_password"])
+        )
 
-    while not network.is_connected:
-        logger.info("Connecting to network...")
-        network.connect()
-        time.sleep(0.5)
-    logger.info("Network Connected!")
+        while not network.is_attached:
+            logger.info("Attaching to network...")
+            time.sleep(0.5)
+        logger.info("Attached!")
 
-    logger.info(f"My Local IP address is: {fona.local_ip}")
+        while not network.is_connected:
+            logger.info("Connecting to network...")
+            network.connect()
+            time.sleep(0.5)
+        logger.info("Network Connected!")
 
-    # Initialize a requests object with a socket and cellular interface
-    requests.set_socket(cellular_socket, fona)
+        logger.info(f"My Local IP address is: {fona.local_ip}")
 
-    http_payload = []
-    data_paths = os.listdir("/data_entries/")
-    for path in data_paths:
-        with open("/data_entries/" + path, "r") as file:
-            try:
-                http_payload.append(json.loads(file.readline()))
-            except:
-                logger.warning(f"Invalid saved data found at /data_entries/{path}")
-                #os.remove("/data_entries/" + path) #This could be dangerous - DON'T DO!
-            #TODO: RAM limit
-    logger.debug(f"HTTP_PAYLOAD: {http_payload}")
+        # Initialize a requests object with a socket and cellular interface
+        requests.set_socket(cellular_socket, fona)
+
+        http_payload = []
+        data_paths = os.listdir("/data_entries/")
+        for path in data_paths:
+            with open("/data_entries/" + path, "r") as file:
+                try:
+                    http_payload.append(json.loads(file.readline()))
+                except:
+                    logger.warning(f"Invalid saved data found at /data_entries/{path}")
+                    #os.remove("/data_entries/" + path) #This could be dangerous - DON'T DO!
+                #TODO: RAM limit
+        logger.debug(f"HTTP_PAYLOAD: {http_payload}")
+    except ValueError:
+        logger.critical("Time not met. Logging data and shutting down device.")
+        shutdown()
 
     try:
         logger.info("Sending HTTP request!")

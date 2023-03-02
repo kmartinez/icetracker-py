@@ -21,6 +21,7 @@ import asyncio
 
 from Drivers.DGPS import GPS_DEVICE
 from Drivers.RTC import RTC_DEVICE
+from Drivers.TMP117 import TMP_117
 
 logger = logging.getLogger("ROVER")
 
@@ -84,6 +85,7 @@ async def rover_loop():
 
                 if util.var(GPS_SAMPLES["longs"].circularBuffer) < VAR_MAX and util.var(GPS_SAMPLES["lats"].circularBuffer) < VAR_MAX:
                     logger.info("Accurate reading obtained! Writing data to file")
+                    # section to include temperature Sensor
                     RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
                     gps_data = GPSData(
                         datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc)),
@@ -92,8 +94,12 @@ async def rover_loop():
                         GPS_DEVICE.altitude_m,
                         GPS_DEVICE.fix_quality,
                         float(GPS_DEVICE.horizontal_dilution),
-                        int(GPS_DEVICE.satellites)
+                        int(GPS_DEVICE.satellites),
+                        float(TMP_117.temperature)  
                         )
+                        #TODO: 
+                        # check if temperature has been implemented correctly and can be written by the rover. 
+                        # check that it can be processed correctly by the ingestor.
                     with open("/data_entries/" + gps_data.timestamp.isoformat().replace(":", "_"), "w") as file:
                         file.write(gps_data.to_json() + "\n")
                     logger.info("File write complete!")
