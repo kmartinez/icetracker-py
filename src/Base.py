@@ -13,6 +13,7 @@ import Drivers.Radio as radio
 from Drivers.Radio import PacketType
 
 import adafruit_requests as requests
+import adafruit_sdcard
 from adafruit_fona.adafruit_fona import FONA
 from adafruit_fona.fona_3g import FONA3G
 import adafruit_fona.adafruit_fona_network as network
@@ -25,6 +26,7 @@ import os
 from microcontroller import watchdog
 import adafruit_logging as logging
 import busio
+import storage
 
 logger = logging.getLogger("BASE")
 
@@ -35,9 +37,27 @@ GSM_RST_PIN: digitalio.DigitalInOut = digitalio.DigitalInOut(board.D5)
 finished_rovers: dict[int, bool] = {}
 # when to send data
 COMMS_TIME = [12]
+#CS - chip select global variable for SPI SMT SD Card
+cs = digitalio.DigitalInOut(board.D4)
 
 # get current time from GPS or RTC? Probably best to be GPS...
 # datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc))
+
+# may want to put this in a separate module function to keep base.py clean
+def mount_SD():
+    try:
+        print("Mounting to SD Card")
+        spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
+        # fs = sdcardio.SDCard(spi, SPI_CS)
+        fs = adafruit_sdcard.SDCard(spi, cs)
+
+        # vfs = "/measurements"
+        vfs = storage.VfsFat(fs)
+        storage.mount(vfs,"/sd")
+        print("\nSuccessfully Mounted")
+    except OSError:
+        print("SD Card not active, please try again.")
+    # SPI_CS: False
 
 
 async def clock_calibrator():
