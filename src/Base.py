@@ -138,8 +138,8 @@ if __name__ == "__main__":
         logger.warning("Async tasks timed out! Continuing with any remaining data")
         pass #Don't care, we have data, just send what we got
 
-    #TODO: include a checker for a default COMMS_TIME - reference ->
-    # if time on the RTC matches that of COMMS_TIME, proceed to the section of the code
+    #TODO: include a checker for a default COMMS_TIME - reference -> kmartinez/picogps/main.py
+    # if time on the RTC matches that of COMMS_TIME, proceed to the section of the code enabling the FONA
     # otherwise, turn off.
     try:
         logger.info("Checking current time")

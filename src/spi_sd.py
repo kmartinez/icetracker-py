@@ -1,60 +1,62 @@
-import board
 import busio
-# from digitalio import DigitalInOut
-import time
-import digitalio
+from os import statvfs, listdir, stat, remove, rmdir, mkdir
+import board
 import storage
-import sdcardio
+import digitalio
+import time
 import adafruit_sdcard
-import os
-import adafruit_tmp117
-from adminmode import diskfree
+import adminmode
 
-# SPI_CS = digitalio.DigitalInOut(board.D4)
-# SPI_CS = board.D4
-i2c = board.STEMMA_I2C()
-tmp = adafruit_tmp117.TMP117(i2c)
+from Drivers.TMP117 import TMP_117
+
 led = digitalio.DigitalInOut(board.LED)
 led.direction = digitalio.Direction.OUTPUT
-
-
 cs = digitalio.DigitalInOut(board.D4)
-print(storage.getmount("/"))
-print("Bytes Available: ", diskfree())
 
 
-# try:
+def diskfree(path):
+    """Checks available storage in either filesystem or SD card
+
+    Args:
+        path (String): path on the OS to read availble storage, throws an error if invalid.
+    """
+    try:
+        info = statvfs(path)
+        return(info[0] * info[3])
+    except OSError:
+        print("Invalid path, please try again.")
+
+
+
 def mount_SD():
+    """Attempts to mount SPI SMT SD Card as a virtual Filesystem to be read and written to.
+        Uses SPI to communicate with the Thing+.
+        Throws an error if SD card is not detected. 
+    """
     try:
         print("Mounting to SD Card")
         spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
-        # fs = sdcardio.SDCard(spi, SPI_CS)
         fs = adafruit_sdcard.SDCard(spi, cs)
-
-        # vfs = "/measurements"
         vfs = storage.VfsFat(fs)
         storage.mount(vfs,"/sd")
         print("\nSuccessfully Mounted")
+
     except OSError:
         print("SD Card not active, please try again.")
-    # SPI_CS: False
 
-def read_file():
-    with open("/sd/temperature.txt", "r") as f:
-        print("Printing lines in file:")
-        line = f.readline()
-        while line != '':
-            print(line)
-            line = f.readline()
-
-
-def write_to_file():
-    with open("/sd/log.txt", "w") as f:
-        f.write("Greetings on the SD Card.!\r\n")
 
 def print_directory(path, tabs=0):
-    for file in os.listdir(path):
-        stats = os.stat(path + "/" + file)
+    """Checks available directories and files on the SD card if mounted successfully. 
+
+    Args:
+        path (String): path on the OS to read existing files/directories, throws an error if invalid.
+        tabs (int, optional): _description_. Defaults to 0.
+    """
+    print("Files on filesystem:")
+    print("====================")
+
+    for file in listdir(path):
+        stats = stat(path + "/" + file)
         filesize = stats[6]
         isdir = stats[0] & 0x4000
 
@@ -78,46 +80,99 @@ def print_directory(path, tabs=0):
             print_directory(path + "/" + file, tabs + 1)
 
 
-def logger():
+def make_dir(path):
+    """Helper function to create a directory on the SD card.
+
+    Args:
+        path (String): path on the OS to read existing files/directories, throws an error if invalid.
+    """
+    try:
+        mkdir(path)
+        print("Directory created.")
+    except OSError:
+        print("Directory already exists!")
+
+
+def remove_dir(path):
+    """Helper function to remove an already existing directory on the SD card.
+
+    Args:
+        path (String): path on the OS to read existing files/directories, throws an error if invalid.
+    """
+    try:
+        rmdir(path)
+        print("Directory deleted.")
+    except OSError:
+        print("Directory doesn't exist.")
+
+
+def remove_file(path):
+    """Helper function to remove an already existing file on the SD card.
+
+    Args:
+        path (String): path on the OS to read existing files/directories, throws an error if invalid.
+    """
+    try:
+        remove(path)
+        print("File removed.")
+    except OSError:
+        print("File doesn't exist.")
+
+
+def read_file(path):
+    """Helper function to read the contents of an already existing file on the SD card.
+
+    Args:
+        path (String): path on the OS to read existing files/directories, throws an error if invalid.
+    """
+    with open(path, "r") as f:
+        print("Printing lines in file:")
+        line = f.readline()
+        while line != '':
+            print(line)
+            line = f.readline()
+
+
+def write_to_file(path, data):
+    """Helper function to write data to the contents of an already existing file on the SD card.
+
+    Args:
+        path (String): path on the OS to read existing files/directories, throws an error if invalid.
+        data (tbc): data recorded from the various drivers to be written on SD card instead of filesystem due to lack of storage
+    """
+    with open(path, "w") as f:
+        f.write("Greetings on the SD Card.!\r\n")
+
+
+def logger(path):
+    """ Test function to log data onto the 'virtual' filesystem without the need to use boot.py.
+
+    Args:
+        path (String): path on the OS to read existing files/directories, throws an error if invalid.
+    """
     print("Logging Temperature via TMP117")
-    while True:
-        with open("/sd/temperature.txt", "a") as file:
+    count = 10
+    while count > 0:
+        with open(path, "a") as file:
             led.value = True
 
-            print("Temperature = %0.1fC" % tmp.temperature)
-            file.write("%0.1fC\n" % tmp.temperature)
+            # print("Temperature = %0.1fC" % TMP_117.temperature)
+            file.write("%0.1fC\n" % TMP_117.temperature)
             led.value = False
 
         time.sleep(1)
-
+        count -= 1
 
 def main():
-
     mount_SD()
-    
-    print(storage.getmount("/sd"))
-    print("Bytes Available: ", diskfree())
-
-    print("Files on filesystem:")
-    print("====================")
+    print(f"Flash size bytes free: ",diskfree("/"))
+    print(f"SPI SMT SD Card bytes free: ",diskfree("/sd"))
+    # remove_file("/sd/test.txt")
+    # make_dir("/sd/sent_data")
     print_directory("/sd")
+    # logger("/sd/data_entries/Temperature.txt")
+    read_file("/sd/data_entries/Temperature.txt")
 
-    # try:
-    #     logger()
-    # except BaseException:
-    #     print("Can't detect sensor.")
-    # logger()
-
-    # write_to_file()
-
-    read_file()
-
-    # pass
-
-    # except OSError:
-    #     print("\n------- Not Accessible --------\n")
-    #     pass
 if __name__ == '__main__':
-    # from adminmode import *
     main()
-
+    
