@@ -1,8 +1,9 @@
 """All code relating to the GPS extensions and GPS module communications
 """
 
-import glactracker_gps
-from busio import UART
+import lib.glactracker_gps
+from lib.glactracker_gps import GPS, GPS_GtopI2C
+from busio import UART, I2C
 import adafruit_logging as logging
 from config import *
 from mpy_decimal import DecimalNumber
@@ -13,13 +14,17 @@ import binascii
 
 logger = logging.getLogger("GPS")
 
-class DGPS(glactracker_gps.GPS):
+class DGPS(lib.glactracker_gps.GPS_GtopI2C):
     """Extended GPS class that allows use of Differential GPS information
     """
-    def __init__(self, uart: UART, rtcm_uart: AsyncUART, debug: bool = False) -> None:
-        super().__init__(uart, debug)
+    # def __init__(self, uart: UART, rtcm_uart: AsyncUART, debug: bool = False) -> None:
+    #     super().__init__(uart, debug)
+    #     self.rtcm_uart = rtcm_uart
+    # TODO: replace `uart` with i2c protocol
+    def __init__(self, i2c: I2C, rtcm_uart: AsyncUART, debug: bool = False) -> None:
+        super().__init__(i2c, address=0x42, debug=False)
         self.rtcm_uart = rtcm_uart
-    
+
     def rtk_calibrate(self, rtcm3_data: bytes):
         """Calibrates the GPS module using RTCM3 messages
 
@@ -97,10 +102,13 @@ class DGPS(glactracker_gps.GPS):
         logger.info("RTCM3 obtained from UART")
         return bytes(data)
 
-GPS_UART: UART = UART(board.A1, board.A2, baudrate=115200, receiver_buffer_size=2048)
+# GPS_UART: UART = UART(board.A1, board.A2, baudrate=115200, receiver_buffer_size=2048)
 '''GPS NMEA UART for communications'''
+
+GPS_I2C: I2C = board.STEMMA_I2C()
+''' GPS NMEA I2C for communications'''
 
 RTCM3_UART: AsyncUART = AsyncUART(board.D1, board.D0, baudrate=115200, receiver_buffer_size=2048)
 '''GPS RTCM3 UART'''
 
-GPS_DEVICE: DGPS = DGPS(GPS_UART, RTCM3_UART)
+GPS_DEVICE: DGPS = DGPS(GPS_I2C, RTCM3_UART)
