@@ -4,63 +4,121 @@ import busio
 from analogio import AnalogIn
 import time
 import adafruit_mcp9808 # replaced with tmp117
-import adafruit_lc709203f
+# import adafruit_lc709203f
 from adafruit_datetime import datetime
+from config import *
 
-# TX, RX
-i2c = board.STEMMA_I2C()
+print("Setting up Serial Comms Connections\n")
+# from Drivers.SPI_SD import *
+print("Done\n")
+print("Setting up I2Cs\n")
+from Drivers.TMP117 import *
+from Drivers.RTC import *
+from Drivers.Accelerometer import *
+print("Done\n")
+print("Setting up UARTs\n")
+from Drivers.Radio import *
+# worth putting a try catch block in one instance here
+from Drivers.PSU import *
+# from Drivers.SWARM import *
+from Drivers.DGPS import *
+print("Done\n")
+
 pin_ip = AnalogIn(board.A3)
-lc7 = adafruit_lc709203f.LC709203F(i2c)
+ADMIN_FLAG = False
 
 def diskfree():
-    info = os.statvfs("/")
+    info = os.statvfs("/sd")
     return(info[0] * info[3])
     print(f"bytes free: ",diskfree())   # redundant
 
 def print_data_entries():
     """ Check if directory exists """
-    PATH = "/data_entries"
+    PATH = "/sd/data_entries"
     
     try:
         if os.path.exists(PATH):
-            print(os.listdir("/data_entries"))
+            print(os.listdir(PATH))
     except BaseException:
         print("Directory doesn't exist, create one.")
         # os.mkdir(PATH) # stuck in read-only mode so won't work
         pass
 
     """ Nodes could have been damaged due to using the wrong polarity? """
-def voltage_readings(pin):
-    global lc7 
-    # TODO: cannot use this sensor, maybe faulty? Sensor will be replaced with the same
-    # input method used previously with a couple of resistors in the form of a potential divider.
-    # Will be reading the inputs via an ADC input, just need to decide on the actual pin to use.
-    """ DEPRECATED AT THE MOMENT """
-    # try:
-    # print("Battery Voltage: %0.3fV" % (1+lc7.cell_voltage))
-    # print("Battery Percentage: %0.1F %%" %lc7.cell_percent)
-    # except BaseException:
-    #     print("Sensor not connected.")
-    #     pass
-    # return ("Vbat: {.2f}V".format((pin_ip.value * 3.3) / 65536))
-    """ BAT V readings are inconsistent """
-    print((pin.value * 3.3) / 65536)
+# def voltage_readings(pin):
+#     global lc7 
+#     # TODO: cannot use this sensor, maybe faulty? Sensor will be replaced with the same
+#     # input method used previously with a couple of resistors in the form of a potential divider.
+#     # Will be reading the inputs via an ADC input, just need to decide on the actual pin to use.
+#     """ DEPRECATED AT THE MOMENT """
+#     # try:
+#     # print("Battery Voltage: %0.3fV" % (1+lc7.cell_voltage))
+#     # print("Battery Percentage: %0.1F %%" %lc7.cell_percent)
+#     # except BaseException:
+#     #     print("Sensor not connected.")
+#     #     pass
+#     # return ("Vbat: {.2f}V".format((pin_ip.value * 3.3) / 65536))
+#     """ BAT V readings are inconsistent """
+#     print((pin.value * 3.3) / 65536)
 
-def gps_test():
-    print("Checking uart connection")
-    GPS_UART = busio.UART(board.A1, board.A2, baudrate=115200, receiver_buffer_size=2048)
-    ''' GPS NMEA UART for communications '''
+def gps_uart():
+    print("Checking UART connection")
     RTCM3_UART = busio.UART(board.TX, board.RX, baudrate=115200, receiver_buffer_size=2048)
     ''' GPS RTCM3 UART '''
 
     try:
-        if GPS_UART is not None:
-            print(GPS_UART.readline())
+        if RTCM3_UART is not None:
+            print(RTCM3_UART.readline())
         else:
                 print("Nothing in Buffer")
     except BaseException:
         print("GPS not detected")
         pass
+
+def gps_i2c():
+    count = 2
+    while count > 0:
+        GPS_DEVICE.update()
+        # print(gps.readline())
+        # if gps.has_3d_fix:
+            # if "$GNGGA" in gps.nmea_sentence or "$GNZDA" in gps.nmea_sentence:
+        # if GPS_DEVICE.nmea_sentence is None:
+        #     # print("Nothing yet")
+        #     continue
+        if "$GNGGA" in GPS_DEVICE.nmea_sentence:
+            # GPS_DEVICE.update()
+            print("====================")
+            print("I2C GPS - GNGGA")
+            print(GPS_DEVICE.nmea_sentence)
+            # print(GPS_DEVICE.readline())
+        #     print("====================")
+        # if "$GNZDA" in GPS_DEVICE.nmea_sentence:
+        #         # GPS_DEVICE.update()
+        #     print("====================")
+        #     print("I2C GPS - GNZDA")
+        #     print(GPS_DEVICE.nmea_sentence)
+            # print(GPS_DEVICE.readline())
+        print(GPS_DEVICE.readline().decode())
+        print("====================")
+        count -= 1
+        try:
+            print(GPS_DEVICE.to_dict())
+        except BaseException:
+            print("Nothing to show")
+            print("exit")
+        print("====================\n")
+        """ GPS UART """
+        # RTCM3_UART.update()
+        # print(RTCM3_UART.readline())
+        # print(gps_uart.readline().decode())
+        # if "$GNGGA" in gps_uart.readline().decode():
+        #     print("UART GPS")
+        #     print(gps_uart.readline().decode())
+        #     print("====================")
+        # time.sleep(1)
+    # if "$G" in data: 
+    # # data.decode()
+    #     data.split("$")
 
 def radio_test():
     print("Checking uart connection")
@@ -78,45 +136,101 @@ def radio_test():
         print("Radio not connected.\n Check pins and SMA antenna connections.")
         pass
 
-def temp():
-    i2c = board.I2C()  # uses board.SCL and board.SDA
-    mcp = adafruit_mcp9808.MCP9808(i2c)
+def temperature_sensor(): # uses board.SCL and board.SDA
+    mcp = adafruit_mcp9808.MCP9808(I2C)
     print("%.2f C" % mcp.temperature)
 
+
+#TODO: 
+# - Check DateTime - RTC
+# - Check SPI Mounted and available Storage
+# - Check that Data exists in SPI storage
+# - Check GPS - I2C and UART
+# - Check Radio 
+# - Check GSM Fona
+# - Check SWARM 
+# - Check Temperature Sensor
+# - Check Accelerometer
+# - Check BatV
+
 def admin_menu():
-    print("1\tdatetime")
-    print("2\tGPS test")
-    print("3\tDisk free")
-    print("4\tprint data-entries")
-    print("5\tTemperature")
-    print("6\tVoltage")
-    print("7\tRadio test")
+    print("ADMIN MODE ACCESSED\n")
+    print("Choose one of the following:\n")
+    print("1\tDate/Time")
+    print("2\tSPI SD Flash Chip")
+    print("3\tAvailable Storage")
+    print("4\t/Files on Chip")
+    print("5\tGPS I2C NMEA")
+    print("6\tGPS UART RTCM3")
+    print("7\tXBee Radio - UART")
+    print("8\tGSM FONA - UART")
+    print("9\tSWARM M138 Modem - UART")
+    print("10\tTemperature - TMP117")
+    print("11\tBatV")
+
+    print("Push Button or Enter 0 to exit Admin mode")
 
 def admincmd(c):
+    global ADMIN_FLAG
     if c == "1":
         # may need to update this using gps time.
-        print(f"the datetime is ", datetime.now())
+        print("Date/Time from DS3231 RTC Chip")
+        print("Date: {}-{}-{}\n".format(RTC_I2C.datetime[0],RTC_I2C.datetime[1],RTC_I2C.datetime[2]))
+        print("Time: {}:{}:{}\n".format(RTC_I2C.datetime[3],RTC_I2C.datetime[4],RTC_I2C.datetime[5]))
     elif c == "2":
-        print("printing GPS")
-        gps_test()
+        print("Checking SPI Flash Chip is Mounted")
+        try:
+            from Drivers.SPI_SD import storage, mount_SD, SPI_SD, CS
+            mount_SD(SPI_SD,CS)
+            print(storage.getmount("/sd"))
+        except ImportError:
+            print("Can't Import Driver")
+
     elif c == "3":
-        print(f"disk free: ",diskfree())
+        print(f"Available Storage: ",diskfree())
     elif c == "4":
-        print(f"data entries: ",print_data_entries())
+        from Drivers.SPI_SD import print_directory
+        print(f"Files on SD Chip: ",print_directory("/sd"))
     elif c == "5":
-        print(temp())
-    elif c == "6":
-        while True:
-            # print(voltage_readings())
-            voltage_readings(pin_ip)
-            time.sleep(1)
+        print("Reading NMEA Messages from I2C Pins on GPS board.")
+        gps_i2c()
+    elif c =="6":
+        print("Reading RTCM3 Messages from UART2 Pins on GPS board.")
+        gps_uart()
     elif c == "7":
-        # print(radio_test())
+        print("Testing XBee Radio Module is active.")
         radio_test()
+    elif c == "8":
+        print("Testing GSM FONA Module is active.")
+        radio_test()
+    elif c == "9":
+        print("Testing SWARM M138 Modem is active.")
+        radio_test()
+    elif c == "10":
+        print("Temperature Sensor Reading:")
+        temperature_sensor()
+    elif c == "11":
+        print("Battery Voltage: .")
+        voltage_readings()
+    elif c == "0":
+        ADMIN_FLAG = False
     else:   
         print("command not found")
 
 
-# while True:
-#     adminmenu()
-#     admincmd(input())
+if __name__ == '__main__':
+    
+    admin_menu()
+    ADMIN_FLAG = True
+    while ADMIN_FLAG:
+        admincmd(input())
+
+    # while True:
+    #     if ADMIN_IO.value:
+    try:
+        logger.info("DEVICE IN NORMAL MODE")
+        exec(open('./main.py').read())
+    except BaseException:
+        print("File Not Found.")
+    #     else:
+    #         admincmd(input())
