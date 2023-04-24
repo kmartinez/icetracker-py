@@ -5,8 +5,8 @@ from analogio import AnalogIn
 import time
 import adafruit_mcp9808 # replaced with tmp117
 # import adafruit_lc709203f
-from adafruit_datetime import datetime
 from config import *
+import gc
 
 print("Setting up Serial Comms Connections\n")
 # from Drivers.SPI_SD import *
@@ -24,7 +24,7 @@ from Drivers.PSU import *
 from Drivers.DGPS import *
 print("Done\n")
 
-pin_ip = AnalogIn(board.A3)
+# pin_ip = AnalogIn(board.A3)
 ADMIN_FLAG = False
 
 def diskfree():
@@ -61,6 +61,13 @@ def print_data_entries():
 #     """ BAT V readings are inconsistent """
 #     print((pin.value * 3.3) / 65536)
 
+def read_bat_voltage():
+    bat_v_pin = AnalogIn(board.A1)
+    count = 5
+    while count > 0:
+        print((bat_v_pin.value * 3.3) / 65536 - 0.1)
+        count -= 1
+
 def gps_uart():
     print("Checking UART connection")
     RTCM3_UART = busio.UART(board.TX, board.RX, baudrate=115200, receiver_buffer_size=2048)
@@ -76,38 +83,39 @@ def gps_uart():
         pass
 
 def gps_i2c():
-    count = 2
+    count = 5
     while count > 0:
         GPS_DEVICE.update()
         # print(gps.readline())
         # if gps.has_3d_fix:
-            # if "$GNGGA" in gps.nmea_sentence or "$GNZDA" in gps.nmea_sentence:
+        # if "$GNGGA" in gps.nmea_sentence or "$GNZDA" in gps.nmea_sentence:
         # if GPS_DEVICE.nmea_sentence is None:
         #     # print("Nothing yet")
         #     continue
-        if "$GNGGA" in GPS_DEVICE.nmea_sentence:
-            # GPS_DEVICE.update()
+        if GPS_DEVICE.nmea_sentence is not None:
+            if "$GNGGA" in GPS_DEVICE.nmea_sentence:
+                # GPS_DEVICE.update()
+                print("====================")
+                print("I2C GPS - GNGGA")
+                print(GPS_DEVICE.nmea_sentence)
+                # print(GPS_DEVICE.readline())
+            #     print("====================")
+            # if "$GNZDA" in GPS_DEVICE.nmea_sentence:
+            #         # GPS_DEVICE.update()
+            #     print("====================")
+            #     print("I2C GPS - GNZDA")
+            #     print(GPS_DEVICE.nmea_sentence)
+                # print(GPS_DEVICE.readline())
+            # print(GPS_DEVICE.readline())
             print("====================")
-            print("I2C GPS - GNGGA")
-            print(GPS_DEVICE.nmea_sentence)
-            # print(GPS_DEVICE.readline())
-        #     print("====================")
-        # if "$GNZDA" in GPS_DEVICE.nmea_sentence:
-        #         # GPS_DEVICE.update()
-        #     print("====================")
-        #     print("I2C GPS - GNZDA")
-        #     print(GPS_DEVICE.nmea_sentence)
-            # print(GPS_DEVICE.readline())
-        print(GPS_DEVICE.readline().decode())
-        print("====================")
-        count -= 1
-        try:
-            print(GPS_DEVICE.to_dict())
-        except BaseException:
-            print("Nothing to show")
-            print("exit")
-        print("====================\n")
-        """ GPS UART """
+            count -= 1
+            try:
+                print(GPS_DEVICE.to_dict())
+            except BaseException:
+                print("Nothing to show")
+                print("exit")
+            print("====================\n")
+            """ GPS UART """
         # RTCM3_UART.update()
         # print(RTCM3_UART.readline())
         # print(gps_uart.readline().decode())
@@ -123,7 +131,7 @@ def gps_i2c():
 def radio_test():
     print("Checking uart connection")
     try:
-        RADIO_UART = busio.UART(board.D11, board.D10, baudrate=9600, receiver_buffer_size=2048) 
+        # RADIO_UART = busio.UART(board.D11, board.D10, baudrate=9600, receiver_buffer_size=2048) 
         ''' Radio UART for communications'''
         counter = 10
         while counter > 0:
@@ -210,8 +218,8 @@ def admincmd(c):
         print("Temperature Sensor Reading:")
         temperature_sensor()
     elif c == "11":
-        print("Battery Voltage: .")
-        voltage_readings()
+        print("Battery Voltage: ")
+        read_bat_voltage()
     elif c == "0":
         ADMIN_FLAG = False
     else:   
@@ -227,10 +235,9 @@ if __name__ == '__main__':
 
     # while True:
     #     if ADMIN_IO.value:
-    try:
-        logger.info("DEVICE IN NORMAL MODE")
-        exec(open('./main.py').read())
-    except BaseException:
-        print("File Not Found.")
+    gc.collect()
+    logger.info("DEVICE IN NORMAL MODE")
+    exec(open('./main.py').read())
+
     #     else:
     #         admincmd(input())
