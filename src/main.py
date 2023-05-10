@@ -7,6 +7,7 @@ from config import *
 import os
 import Drivers.PSU as PSU
 from Drivers.RTC import RTC_DEVICE
+from Drivers.SPI_SD import *
 import traceback
 from microcontroller import watchdog
 from watchdog import WatchDogMode
@@ -31,10 +32,10 @@ if __name__ == "__main__":
       watchdog.mode = WatchDogMode.RESET
       watchdog.feed()
    try:
-      if "data_entries" not in os.listdir("/"):
-         os.mkdir("/data_entries")
-      if "sent_data" not in os.listdir("/"):
-         os.mkdir("/sent_data")
+      if "data_entries" not in os.listdir("/sd/"):
+         os.mkdir("/sd/data_entries")
+      if "sent_data" not in os.listdir("/sd/"):
+         os.mkdir("/sd/sent_data")
       #input()
       if DEVICE_ID == 0:
          logger.info("Device is a base station!")
