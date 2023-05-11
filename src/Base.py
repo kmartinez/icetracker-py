@@ -13,8 +13,9 @@ import Drivers.Radio as radio
 from Drivers.Radio import PacketType
 
 import adafruit_requests as requests
+import adafruit_sdcard
 from adafruit_fona.adafruit_fona import FONA
-from adafruit_fona.fona_3g import FONA3G
+# from adafruit_fona.fona_3g import FONA3G
 import adafruit_fona.adafruit_fona_network as network
 import adafruit_fona.adafruit_fona_socket as cellular_socket
 
@@ -25,6 +26,7 @@ import os
 from microcontroller import watchdog
 import adafruit_logging as logging
 import busio
+import storage
 
 logger = logging.getLogger("BASE")
 
@@ -33,6 +35,30 @@ GSM_RST_PIN: digitalio.DigitalInOut = digitalio.DigitalInOut(board.D5)
 
 #this is a global variable so i can still get the data even if the rover loop times out
 finished_rovers: dict[int, bool] = {}
+# when to send data
+COMMS_TIME = [12]
+#CS - chip select global variable for SPI SMT SD Card
+cs = digitalio.DigitalInOut(board.D4)
+
+# get current time from GPS or RTC? Probably best to be GPS...
+# datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc))
+
+# may want to put this in a separate module function to keep base.py clean
+def mount_SD():
+    try:
+        print("Mounting to SD Card")
+        spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
+        # fs = sdcardio.SDCard(spi, SPI_CS)
+        fs = adafruit_sdcard.SDCard(spi, cs)
+
+        # vfs = "/measurements"
+        vfs = storage.VfsFat(fs)
+        storage.mount(vfs,"/sd")
+        print("\nSuccessfully Mounted")
+    except OSError:
+        print("SD Card not active, please try again.")
+    # SPI_CS: False
+
 
 async def clock_calibrator():
     """Task that waits until the GPS has a timestamp and then calibrates the RTC using GPS time
@@ -80,7 +106,7 @@ async def rover_data_loop():
                 logger.warning("Empty GPS data received!!!")
                 continue
             data = GPSData.from_json(packet.payload.decode('utf-8'))
-            with open("/data_entries/" + str(packet.sender) + "-" + data["timestamp"].replace(":", "_"), "w") as file:
+            with open("/sd/data_entries/" + str(packet.sender) + "-" + data["timestamp"].replace(":", "_"), "w") as file:
                 data['rover_id'] = packet.sender
                 logger.debug(f"WRITING_DATA_TO_FILE: {data}")
                 file.write(json.dumps(data) + '\n')
@@ -112,57 +138,76 @@ if __name__ == "__main__":
         logger.warning("Async tasks timed out! Continuing with any remaining data")
         pass #Don't care, we have data, just send what we got
 
-    enable_fona()
-    fona = FONA(GSM_UART, GSM_RST_PIN, debug=True)
-    logger.info("FONA initialized")
-    logger.debug(f"FONA VERSION: fona.version")
-
-    network = network.CELLULAR(
-        fona, (SECRETS["apn"], SECRETS["apn_username"], SECRETS["apn_password"])
-    )
-
-    while not network.is_attached:
-        logger.info("Attaching to network...")
-        time.sleep(0.5)
-    logger.info("Attached!")
-
-    while not network.is_connected:
-        logger.info("Connecting to network...")
-        network.connect()
-        time.sleep(0.5)
-    logger.info("Network Connected!")
-
-    logger.info(f"My Local IP address is: {fona.local_ip}")
-
-    # Initialize a requests object with a socket and cellular interface
-    requests.set_socket(cellular_socket, fona)
-
-    http_payload = []
-    data_paths = os.listdir("/data_entries/")
-    for path in data_paths:
-        with open("/data_entries/" + path, "r") as file:
-            try:
-                http_payload.append(json.loads(file.readline()))
-            except:
-                logger.warning(f"Invalid saved data found at /data_entries/{path}")
-                #os.remove("/data_entries/" + path) #This could be dangerous - DON'T DO!
-            #TODO: RAM limit
-    logger.debug(f"HTTP_PAYLOAD: {http_payload}")
-
+    #TODO: include a checker for a default COMMS_TIME - reference -> kmartinez/picogps/main.py
+    # if time on the RTC matches that of COMMS_TIME, proceed to the section of the code enabling the FONA
+    # otherwise, turn off.
     try:
-        logger.info("Sending HTTP request!")
-        response = requests.post("http://iotgate.ecs.soton.ac.uk/glacsweb/api/ingest", json=http_payload)
-        logger.info(f"STATUS CODE: {response.status_code}, REASON: {response.reason}")
-        #requests.post("http://google.com/glacsweb/api/ingest", json=http_payload)
-        #TODO: check if response OK
+        logger.info("Checking current time")
+        # clock_calibrator updates time on RTC # may need to feed watchdog here...
+        # use clock calibrator, make sure that watchdog has been fed through it, and then use RTC
+        '''Can utilise a similar script from clock_calibrator if RTC_DEVICE fails to update'''
+        # while GPS_DEVICE.timestamp_utc == None:
+        #     while not GPS_DEVICE.update():
+        #         pass
+       
+        if RTC_DEVICE.datetime[3] in COMMS_TIME and RTC_DEVICE.datetime[4] < 10:
+            logger.info('Device meets Comms Time - \n Enabling GSM.')
 
-        # If data ingested correcttly, move files sent from /data_entries/ to /sent_data/
-        if str(response.status_code) == "200":
-            paths_sent = os.listdir("/data_entries/")
-            for path in paths_sent:
-                os.rename("/data_entries/" + path, "/sent_data/" + path)
-            logger.info("HTTP request successful! Removing all sent data")
-        else:
-            logger.warning(f"STATUS CODE: {response.status_code}, REASON: {response.reason}")
-    finally:
+            enable_fona()
+            fona = FONA(GSM_UART, GSM_RST_PIN, debug=True)
+            logger.info("FONA initialized")
+            logger.debug(f"FONA VERSION: fona.version")
+
+            network = network.CELLULAR(
+                fona, (SECRETS["apn"], SECRETS["apn_username"], SECRETS["apn_password"])
+            )
+
+            while not network.is_attached:
+                logger.info("Attaching to network...")
+                time.sleep(0.5)
+            logger.info("Attached!")
+
+            while not network.is_connected:
+                logger.info("Connecting to network...")
+                network.connect()
+                time.sleep(0.5)
+            logger.info("Network Connected!")
+
+            logger.info(f"My Local IP address is: {fona.local_ip}")
+
+            # Initialize a requests object with a socket and cellular interface
+            requests.set_socket(cellular_socket, fona)
+
+            http_payload = []
+            data_paths = os.listdir("/data_entries/")
+            for path in data_paths:
+                with open("/data_entries/" + path, "r") as file:
+                    try:
+                        http_payload.append(json.loads(file.readline()))
+                    except:
+                        logger.warning(f"Invalid saved data found at /data_entries/{path}")
+                        #os.remove("/data_entries/" + path) #This could be dangerous - DON'T DO!
+                    #TODO: RAM limit
+            logger.debug(f"HTTP_PAYLOAD: {http_payload}")
+
+
+        try:
+            logger.info("Sending HTTP request!")
+            response = requests.post("http://iotgate.ecs.soton.ac.uk/glacsweb/api/ingest", json=http_payload)
+            logger.info(f"STATUS CODE: {response.status_code}, REASON: {response.reason}")
+            #requests.post("http://google.com/glacsweb/api/ingest", json=http_payload)
+            #TODO: check if response OK
+
+            # If data ingested correcttly, move files sent from /data_entries/ to /sent_data/
+            if str(response.status_code) == "200":
+                paths_sent = os.listdir("/data_entries/")
+                for path in paths_sent:
+                    os.rename("/data_entries/" + path, "/sent_data/" + path)
+                logger.info("HTTP request successful! Removing all sent data")
+            else:
+                logger.warning(f"STATUS CODE: {response.status_code}, REASON: {response.reason}")
+        finally:
+            shutdown()
+    except ValueError:
+        logger.critical("Time not met. Logging data and shutting down device.")
         shutdown()
