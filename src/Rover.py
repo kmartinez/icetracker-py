@@ -1,7 +1,3 @@
-"""Main code for all rover devices
-(Executed directly by main.py)
-"""
-
 import Drivers.PSU as PSU
 import Drivers.Radio as radio
 from Drivers.Radio import PacketType
@@ -18,17 +14,22 @@ from microcontroller import watchdog
 import adafruit_logging as logging
 import time
 import asyncio
+# from spi_sd import *
 
+# mount_SD()
 from Drivers.DGPS import GPS_DEVICE
 from Drivers.RTC import RTC_DEVICE
 from Drivers.TMP117 import TMP_117
+from Drivers.BATV import BATV 
 
 logger = logging.getLogger("ROVER")
 
+
+
 DecimalNumber.set_scale(32)
 SD_MAX = DecimalNumber("0.0001")
-'''Maximum acceptible standard deviation [degrees lat/long]'''
 VAR_MAX = SD_MAX ** 2
+'''Maximum acceptible standard deviation [m]'''
 AVERAGING_SAMPLE_SIZE = 5
 '''number of samples to take a rolling standard deviation and average of'''
 
@@ -41,20 +42,16 @@ accurate_reading_saved: bool = False
 sent_data_start_pos: int = 999999999
 
 async def feed_watchdog():
-    """Upon being executed by a scheduler, this task will feed the watchdog then yield.
-    Added as a task to the asyncio scheduler by this module's main code.
-    """
     while True:
         if not DEBUG["WATCHDOG_DISABLE"]:
             watchdog.feed()
         await asyncio.sleep(0)
 
 async def rover_loop():
-    """Main functionality of the rover resides here.
+    """Main loop of each rover.
     Waits for radio message and checks its type.
     If it's RTCM3, send back NMEA data.
-    If it's an ACK for us, shutdown the system because the base has our stuff.
-    Added as a task to the asyncio scheduler upon startup
+    If it's an ACK for us, shutdown the system because the base has our stuff
     """
     # Rover needs to:
     # Receive packet
@@ -85,7 +82,6 @@ async def rover_loop():
 
                 if util.var(GPS_SAMPLES["longs"].circularBuffer) < VAR_MAX and util.var(GPS_SAMPLES["lats"].circularBuffer) < VAR_MAX:
                     logger.info("Accurate reading obtained! Writing data to file")
-                    # section to include temperature Sensor
                     RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
                     gps_data = GPSData(
                         datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc)),
@@ -95,11 +91,10 @@ async def rover_loop():
                         GPS_DEVICE.fix_quality,
                         float(GPS_DEVICE.horizontal_dilution),
                         int(GPS_DEVICE.satellites),
-                        float(TMP_117.temperature)  
+                        float(TMP_117.get_temperature()),
+                        float(BATV.battery_voltage())
                         )
-                        #TODO: 
-                        # check if temperature has been implemented correctly and can be written by the rover. 
-                        # check that it can be processed correctly by the ingestor.
+                    #TODO: Need to update code to support SPI_SD chip 
                     with open("/data_entries/" + gps_data.timestamp.isoformat().replace(":", "_"), "w") as file:
                         file.write(gps_data.to_json() + "\n")
                     logger.info("File write complete!")
@@ -133,4 +128,4 @@ async def rover_loop():
 
 if __name__ == "__main__":
     asyncio.run(asyncio.wait_for_ms(asyncio.gather(rover_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
-    PSU.shutdown()
+    PSU.shutdo

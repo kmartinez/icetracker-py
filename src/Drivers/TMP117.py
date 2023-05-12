@@ -5,7 +5,7 @@ import adafruit_tmp117
 class TMP117(adafruit_tmp117.TMP117):
     def get_temperature(self):
         try:
-            print(self.temperature)
+            return self.temperature
         except BaseException:
             print("Temperature sensor not detected.\n Please check connections.")
         
