@@ -1,6 +1,3 @@
-"""Helper module for dealing with GPS coordinate information
-"""
-
 import json
 from adafruit_datetime import datetime
 from mpy_decimal import DecimalNumber
@@ -10,9 +7,6 @@ import adafruit_logging as logging
 logger = logging.getLogger("GPS")
 
 class GPSData:
-    """Class representing all the data that the GPS can return
-    (in regards to coordinate information)
-    """
     timestamp: datetime
     latitude: str
     longitude: str
@@ -20,6 +14,8 @@ class GPSData:
     quality: int
     hdop: float
     sats: int
+    temp: float
+    batv: float
 
     def __init__(
         self,
@@ -29,7 +25,9 @@ class GPSData:
         altitude: float,
         quality: int,
         hdop: float,
-        sats: int
+        sats: int,
+        temp: float,
+        batv: float
         ):
         self.timestamp = timestamp
         self.latitude = str(latitude)
@@ -38,6 +36,8 @@ class GPSData:
         self.quality = quality
         self.hdop = hdop
         self.sats = sats
+        self.temp: temp
+        self.batv = batv
 
     def to_json(self) -> str:
         """Serializes self to json and then to bytes ready to send over radio
@@ -52,7 +52,9 @@ class GPSData:
             "altitude": self.altitude,
             "quality": self.quality,
             "hdop": self.hdop,
-            "sats": self.sats
+            "sats": self.sats,
+            "temperature" : self.temp,
+            "battery_volts" : self.batv
         }
         output = json.dumps(data)
 
