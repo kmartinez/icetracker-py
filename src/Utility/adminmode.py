@@ -10,19 +10,18 @@ import gc
 
 print("Setting up Serial Comms Connections\n")
 # from Drivers.SPI_SD import *
-print("Done\n")
 print("Setting up I2Cs\n")
 from Drivers.TMP117 import *
 from Drivers.RTC import *
-from Drivers.Accelerometer import *
+# from Drivers.Accelerometer import *
 print("Done\n")
-print("Setting up UARTs\n")
-from Drivers.Radio import *
+# print("Setting up UARTs\n")
 # worth putting a try catch block in one instance here
 from Drivers.PSU import *
 # from Drivers.SWARM import *
 from Drivers.DGPS import *
-print("Done\n")
+# print("Done\n")
+from Drivers.BATV import BAT_V
 
 # pin_ip = AnalogIn(board.A3)
 ADMIN_FLAG = False
@@ -62,28 +61,31 @@ def print_data_entries():
 #     print((pin.value * 3.3) / 65536)
 
 def read_bat_voltage():
-    bat_v_pin = AnalogIn(board.A1)
+    
     count = 5
     while count > 0:
-        print((bat_v_pin.value * 3.3) / 65536 - 0.1)
+        print((BAT_V.value * 3.3) / 65536 - 0.1)
         count -= 1
 
 def gps_uart():
     print("Checking UART connection")
-    RTCM3_UART = busio.UART(board.TX, board.RX, baudrate=115200, receiver_buffer_size=2048)
-    ''' GPS RTCM3 UART '''
-
+    # RTCM3_UART = busio.UART(board.TX, board.RX, baudrate=115200, receiver_buffer_size=2048)
+    # ''' GPS RTCM3 UART '''
+    count = 5
     try:
-        if RTCM3_UART is not None:
-            print(RTCM3_UART.readline())
-        else:
+        while count > 0: 
+            GPS_DEVICE.update()
+            if RTCM3_UART is not None:
+                print(RTCM3_UART.readline())
+                count -= 1
+            else:
                 print("Nothing in Buffer")
     except BaseException:
         print("GPS not detected")
         pass
 
 def gps_i2c():
-    count = 5
+    count = 1
     while count > 0:
         GPS_DEVICE.update()
         # print(gps.readline())
@@ -100,11 +102,11 @@ def gps_i2c():
                 print(GPS_DEVICE.nmea_sentence)
                 # print(GPS_DEVICE.readline())
             #     print("====================")
-            # if "$GNZDA" in GPS_DEVICE.nmea_sentence:
-            #         # GPS_DEVICE.update()
-            #     print("====================")
-            #     print("I2C GPS - GNZDA")
-            #     print(GPS_DEVICE.nmea_sentence)
+            if "$GNZDA" in GPS_DEVICE.nmea_sentence:
+                    # GPS_DEVICE.update()
+                print("====================")
+                print("I2C GPS - GNZDA")
+                print(GPS_DEVICE.nmea_sentence)
                 # print(GPS_DEVICE.readline())
             # print(GPS_DEVICE.readline())
             print("====================")
@@ -115,7 +117,6 @@ def gps_i2c():
                 print("Nothing to show")
                 print("exit")
             print("====================\n")
-            """ GPS UART """
         # RTCM3_UART.update()
         # print(RTCM3_UART.readline())
         # print(gps_uart.readline().decode())
@@ -129,14 +130,17 @@ def gps_i2c():
     #     data.split("$")
 
 def radio_test():
-    print("Checking uart connection")
+    print("Checking XBee Radio Uart connection")
+    # from Drivers.Radio import *
+    import Drivers.Radio
+
     try:
         # RADIO_UART = busio.UART(board.D11, board.D10, baudrate=9600, receiver_buffer_size=2048) 
         ''' Radio UART for communications'''
         counter = 10
         while counter > 0:
-            if RADIO_UART is not None:
-                print(RADIO_UART.readline())
+            if Drivers.Radio.UART is not None:
+                print(Drivers.Radio.UART.readline())
             else:
                 print("Nothing in Buffer")
             counter -= 1
@@ -144,9 +148,40 @@ def radio_test():
         print("Radio not connected.\n Check pins and SMA antenna connections.")
         pass
 
+def gsm_test():
+    print("Checking GSM Uart connection")
+    # from Drivers.Radio import *
+    from Drivers.PSU import GSM_UART, GSM_RST_PIN
+    import adafruit_fona as FONA
+
+    try:
+        # RADIO_UART = busio.UART(board.D11, board.D10, baudrate=9600, receiver_buffer_size=2048) 
+        ''' Radio UART for communications'''
+        fona = FONA(GSM_UART, GSM_RST_PIN, debug=True)
+        logger.info("FONA initialized")
+        logger.debug(f"FONA VERSION: fona.version")
+
+        network = network.CELLULAR(
+            fona, (SECRETS["apn"], SECRETS["apn_username"], SECRETS["apn_password"])
+        )
+
+        while not network.is_attached:
+            logger.info("Attaching to network...")
+            time.sleep(0.5)
+        logger.info("Attached!")
+
+        while not network.is_connected:
+            logger.info("Connecting to network...")
+            network.connect()
+            time.sleep(0.5)
+        logger.info("Network Connected!")
+    except BaseException:
+        print("Fona not detected.\n Check pins and SMA antenna connections.")
+        pass
+
+
 def temperature_sensor(): # uses board.SCL and board.SDA
-    mcp = adafruit_mcp9808.MCP9808(I2C)
-    print("%.2f C" % mcp.temperature)
+    print(TMP_117.get_temperature())
 
 
 #TODO: 
@@ -183,8 +218,8 @@ def admincmd(c):
     if c == "1":
         # may need to update this using gps time.
         print("Date/Time from DS3231 RTC Chip")
-        print("Date: {}-{}-{}\n".format(RTC_I2C.datetime[0],RTC_I2C.datetime[1],RTC_I2C.datetime[2]))
-        print("Time: {}:{}:{}\n".format(RTC_I2C.datetime[3],RTC_I2C.datetime[4],RTC_I2C.datetime[5]))
+        print("Date: {}-{}-{}\n".format(RTC_DEVICE.datetime[2],RTC_DEVICE.datetime[1],RTC_DEVICE.datetime[0]))
+        print("Time: {}:{}:{}\n".format(RTC_DEVICE.datetime[3],RTC_DEVICE.datetime[4],RTC_DEVICE.datetime[5]))
     elif c == "2":
         print("Checking SPI Flash Chip is Mounted")
         try:
@@ -210,7 +245,7 @@ def admincmd(c):
         radio_test()
     elif c == "8":
         print("Testing GSM FONA Module is active.")
-        radio_test()
+        gsm_test()
     elif c == "9":
         print("Testing SWARM M138 Modem is active.")
         radio_test()
@@ -227,7 +262,7 @@ def admincmd(c):
 
 
 if __name__ == '__main__':
-    
+    logger.info("DEVICE IN ADMIN MODE")
     admin_menu()
     ADMIN_FLAG = True
     while ADMIN_FLAG:

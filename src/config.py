@@ -3,6 +3,15 @@ Make sure WATCHDOG_DISABLE = False for deployments!
 """
 
 import adafruit_logging as logging
+import board
+from busio import UART, SPI
+from digitalio import DigitalInOut
+
+"""Pin Definitions"""
+I2C = board.I2C()
+'''Main I2C Bus for communication with TMP117, GPS NMEA and DS3231 Chip'''
+ADMIN_IO = DigitalInOut(board.A2)
+'''Main Admin IO Pin'''
 
 GLOBAL_FAILSAFE_TIMEOUT = 600
 '''If this amount of seconds passes program should abort and base should send whatever it has'''
@@ -12,6 +21,8 @@ DEVICE_ID = 0
 '''ID of this device (Device will become a base station if this is 0)'''
 ROVER_COUNT = 1
 '''Number of rovers total (not including base stations)'''
+
+
 
 DEBUG =  {
     "FAKE_DATA": False, #Ignores actual GPS data and just uses fake static data instead

@@ -82,9 +82,12 @@ async def rover_loop():
 
                 if util.var(GPS_SAMPLES["longs"].circularBuffer) < VAR_MAX and util.var(GPS_SAMPLES["lats"].circularBuffer) < VAR_MAX:
                     logger.info("Accurate reading obtained! Writing data to file")
-                    RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
+                    #TODO: Temporary fix for RTC timing data to be able to send packets across to the base.
+                    
+                    # RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
                     gps_data = GPSData(
-                        datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc)),
+                        # datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc)),
+                        datetime.fromtimestamp(time.mktime(RTC_DEVICE.datetime)),
                         util.mean(GPS_SAMPLES["lats"].circularBuffer),
                         util.mean(GPS_SAMPLES["longs"].circularBuffer),
                         GPS_DEVICE.altitude_m,
@@ -95,7 +98,7 @@ async def rover_loop():
                         float(BATV.battery_voltage())
                         )
                     #TODO: Need to update code to support SPI_SD chip 
-                    with open("/data_entries/" + gps_data.timestamp.isoformat().replace(":", "_"), "w") as file:
+                    with open("/sd/data_entries/" + gps_data.timestamp.isoformat().replace(":", "_"), "w") as file:
                         file.write(gps_data.to_json() + "\n")
                     logger.info("File write complete!")
                     accurate_reading_saved = True
@@ -105,10 +108,10 @@ async def rover_loop():
             #Send the oldest data point we have
             #If there aren't any, delete
             logger.info("Radio packet received and accurate reading is obtained!")
-            remaining_paths = os.listdir("/data_entries/")
+            remaining_paths = os.listdir("/sd/data_entries/")
             if (len(remaining_paths) > 0):
                 logger.info("Sending reading to base")
-                with open("/data_entries/" + remaining_paths[0], "r") as file:
+                with open("/sd/data_entries/" + remaining_paths[0], "r") as file:
                     data_to_send = file.readline()
                     radio.broadcast_data(PacketType.NMEA, data_to_send.encode('utf-8'))
             else:
@@ -119,8 +122,8 @@ async def rover_loop():
             #ACK received, which means the base received a data message
             #We can now safely delete said message from the blob
             logger.info("ACK received from base, deleting sent data")
-            if len(os.listdir("/data_entries/")) > 0:
-                os.remove("/data_entries/" + os.listdir("/data_entries/")[0])
+            if len(os.listdir("/sd/data_entries/")) > 0:
+                os.remove("/sd/data_entries/" + os.listdir("/sd/data_entries/")[0])
             
         elif packet.type == PacketType.FIN and struct.unpack(FormatStrings.PACKET_DEVICE_ID, packet.payload)[0] == DEVICE_ID:
             logger.info("Base has given OK to shutdown!")

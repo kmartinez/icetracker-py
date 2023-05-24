@@ -2,6 +2,8 @@
 Creates a scheduler and adds all base station tasks to it
 """
 
+
+
 import time
 from Drivers.PSU import * #EVERYTHING FROM THIS IS READONLY (you can use write functions, but cannot actually modify a variable)
 # import Drivers.Radio as radio
@@ -15,7 +17,7 @@ from Drivers.Radio import PacketType
 import adafruit_requests as requests
 import adafruit_sdcard
 from adafruit_fona.adafruit_fona import FONA
-from adafruit_fona.fona_3g import FONA3G
+# from adafruit_fona.fona_3g import FONA3G
 import adafruit_fona.adafruit_fona_network as network
 import adafruit_fona.adafruit_fona_socket as cellular_socket
 
@@ -27,11 +29,12 @@ from microcontroller import watchdog
 import adafruit_logging as logging
 import busio
 import storage
+import gc
 
 logger = logging.getLogger("BASE")
 
-GSM_UART: busio.UART = busio.UART(board.A5, board.D6, baudrate=9600)
-GSM_RST_PIN: digitalio.DigitalInOut = digitalio.DigitalInOut(board.D5)
+# GSM_UART: busio.UART = busio.UART(board.A5, board.D6, baudrate=9600)
+# GSM_RST_PIN: digitalio.DigitalInOut = digitalio.DigitalInOut(board.D5)
 
 #this is a global variable so i can still get the data even if the rover loop times out
 finished_rovers: dict[int, bool] = {}
@@ -60,13 +63,14 @@ def mount_SD():
     # SPI_CS: False
 
 
-async def clock_calibrator():
-    """Task that waits until the GPS has a timestamp and then calibrates the RTC using GPS time
-    """
-    while GPS_DEVICE.timestamp_utc == None:
-        while not GPS_DEVICE.update():
-            pass
-        RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
+# async def clock_calibrator():
+#     """Task that waits until the GPS has a timestamp and then calibrates the RTC using GPS time
+#     """
+#     gc.collect()
+#     while GPS_DEVICE.timestamp_utc == None:
+#         while not GPS_DEVICE.update():
+#             pass
+#         RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
 
 async def feed_watchdog():
     """Upon being executed by a scheduler, this task will feed the watchdog then yield.
@@ -106,7 +110,7 @@ async def rover_data_loop():
                 logger.warning("Empty GPS data received!!!")
                 continue
             data = GPSData.from_json(packet.payload.decode('utf-8'))
-            with open("/data_entries/" + str(packet.sender) + "-" + data["timestamp"].replace(":", "_"), "w") as file:
+            with open("/sd/data_entries/" + str(packet.sender) + "-" + data["timestamp"].replace(":", "_"), "w") as file:
                 data['rover_id'] = packet.sender
                 logger.debug(f"WRITING_DATA_TO_FILE: {data}")
                 file.write(json.dumps(data) + '\n')
@@ -132,7 +136,7 @@ if __name__ == "__main__":
     #end
     try:
         logger.info("Starting async tasks")
-        loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(rover_data_loop(), rtcm3_loop(), clock_calibrator(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
+        loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(rover_data_loop(), rtcm3_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
         logger.info("Async tasks have finished running")
     except asyncio.TimeoutError:
         logger.warning("Async tasks timed out! Continuing with any remaining data")
@@ -145,15 +149,15 @@ if __name__ == "__main__":
         logger.info("Checking current time")
         # clock_calibrator updates time on RTC # may need to feed watchdog here...
         # use clock calibrator, make sure that watchdog has been fed through it, and then use RTC
-        '''Can utilise a similar script from clock_calibrator RTC_DEVICE fails to update'''
+        '''Can utilise a similar script from clock_calibrator if RTC_DEVICE fails to update'''
         # while GPS_DEVICE.timestamp_utc == None:
         #     while not GPS_DEVICE.update():
         #         pass
        
-        if RTC_DEVICE.datetime[3] in COMMS_TIME and RTC_DEVICE.datetime[4] < 10:
+        if RTC_DEVICE.datetime[3] in COMMS_TIME and RTC_DEVICE.datetime[4] < 15:
             logger.info('Device meets Comms Time - \n Enabling GSM.')
 
-            enable_fona()
+            # enable_fona()
             fona = FONA(GSM_UART, GSM_RST_PIN, debug=True)
             logger.info("FONA initialized")
             logger.debug(f"FONA VERSION: fona.version")
@@ -173,15 +177,13 @@ if __name__ == "__main__":
                 time.sleep(0.5)
             logger.info("Network Connected!")
 
-            logger.info(f"My Local IP address is: {fona.local_ip}")
-
             # Initialize a requests object with a socket and cellular interface
             requests.set_socket(cellular_socket, fona)
 
             http_payload = []
-            data_paths = os.listdir("/data_entries/")
+            data_paths = os.listdir("/sd/data_entries/")
             for path in data_paths:
-                with open("/data_entries/" + path, "r") as file:
+                with open("/sd/data_entries/" + path, "r") as file:
                     try:
                         http_payload.append(json.loads(file.readline()))
                     except:
@@ -189,24 +191,28 @@ if __name__ == "__main__":
                         #os.remove("/data_entries/" + path) #This could be dangerous - DON'T DO!
                     #TODO: RAM limit
             logger.debug(f"HTTP_PAYLOAD: {http_payload}")
-    except ValueError:
-        logger.critical("Time not met. Logging data and shutting down device.")
-        shutdown()
 
-    try:
-        logger.info("Sending HTTP request!")
-        response = requests.post("http://iotgate.ecs.soton.ac.uk/glacsweb/api/ingest", json=http_payload)
-        logger.info(f"STATUS CODE: {response.status_code}, REASON: {response.reason}")
-        #requests.post("http://google.com/glacsweb/api/ingest", json=http_payload)
-        #TODO: check if response OK
 
-        # If data ingested correcttly, move files sent from /data_entries/ to /sent_data/
-        if str(response.status_code) == "200":
-            paths_sent = os.listdir("/data_entries/")
-            for path in paths_sent:
-                os.rename("/data_entries/" + path, "/sent_data/" + path)
-            logger.info("HTTP request successful! Removing all sent data")
+            try:
+                logger.info("Sending HTTP request!")
+                response = requests.post("http://iotgate.ecs.soton.ac.uk/glacsweb/api/ingest", json=http_payload)
+                logger.info(f"STATUS CODE: {response.status_code}, REASON: {response.reason}")
+                #requests.post("http://google.com/glacsweb/api/ingest", json=http_payload)
+                #TODO: check if response OK
+
+                # If data ingested correcttly, move files sent from /data_entries/ to /sent_data/
+                if str(response.status_code) == "200":
+                    paths_sent = os.listdir("/sd/data_entries/")
+                    for path in paths_sent:
+                        os.rename("/sd/data_entries/" + path, "/sd/sent_data/" + path)
+                    logger.info("HTTP request successful! Removing all sent data")
+                else:
+                    logger.warning(f"STATUS CODE: {response.status_code}, REASON: {response.reason}")
+            finally:
+                shutdown()
         else:
-            logger.warning(f"STATUS CODE: {response.status_code}, REASON: {response.reason}")
-    finally:
+            logger.warning("Time not met. Logging data and shutting down device.")
+            shutdown()
+    except OSError:
+        logger.critical("Unexpected Behaviour Here.")
         shutdown()
