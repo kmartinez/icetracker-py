@@ -3,10 +3,11 @@
 see glacsweb.org
 
 ## Circuitpython
-designed to run on circuitpython - tested on version 7.x.x
+designed to run on circuitpython - tested on version 8
+needs modified GPS library, temperature and accelerometer, DS2131 RTC libraries
 
 ## Hardware
-Uses Thing Plus SAMD51, Sparkfun M9P GPS, Adafruit FONA and Sparkfun SWARM. Also DIGI XB8X-DMUS-001 radio.
+Uses Thing Plus SAMD51, Sparkfun M9P GPS, Adafruit FONA and XTSD flash/SD, Sparkfun SWARM. Also DIGI SX868 radio.
 
 ## Docs
 To make html docs run `./make.bat html`.
