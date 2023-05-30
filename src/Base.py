@@ -145,6 +145,8 @@ if __name__ == "__main__":
     #TODO: include a checker for a default COMMS_TIME - reference -> kmartinez/picogps/main.py
     # if time on the RTC matches that of COMMS_TIME, proceed to the section of the code enabling the FONA
     # otherwise, turn off.
+    disable_gps()
+    
     try:
         logger.info("Checking current time")
         # clock_calibrator updates time on RTC # may need to feed watchdog here...
