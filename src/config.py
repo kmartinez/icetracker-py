@@ -7,11 +7,21 @@ import board
 from busio import UART, SPI
 from digitalio import DigitalInOut
 
-"""Pin Definitions"""
-I2C = board.I2C()
-'''Main I2C Bus for communication with TMP117, GPS NMEA and DS3231 Chip'''
+
+
 ADMIN_IO = DigitalInOut(board.A2)
 '''Main Admin IO Pin'''
+COMMS_EN = DigitalInOut(board.D12)
+COMMS_EN.switch_to_output(value=False)
+'''ENABLE LR COMMS'''
+GPS_EN = DigitalInOut(board.D4)
+GPS_EN.switch_to_output(value=False)
+'''ENALBE GPS'''
+BATV_EN = DigitalInOut(board.A1)
+BATV_EN.switch_to_output(value=False)
+'''ENABLE BATV INPUT'''
+"""Pin Definitions"""
+
 
 GLOBAL_FAILSAFE_TIMEOUT = 600
 '''If this amount of seconds passes program should abort and base should send whatever it has'''
@@ -45,3 +55,4 @@ SECRETS = { #I would put this on its own file untracked by git if you ever put a
     "apn_username": "",
     "apn_password": "",
 }
+
