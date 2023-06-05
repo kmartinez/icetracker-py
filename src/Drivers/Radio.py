@@ -159,7 +159,7 @@ def broadcast_packet(packet: RadioPacket):
 
     marker = struct.pack(FormatStrings.PACKET_MARKER, 0x80)
 
-    UART.write(marker + marker + sizeRaw + packetRaw)
+    UART.write(marker + marker + sizeRaw + packetRaw + "\n")
     logger.info("Packet send complete!")
 
 def broadcast_data(type: PacketType, payload: bytes):
