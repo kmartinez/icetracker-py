@@ -1,15 +1,15 @@
-import board
-import busio
-import adafruit_tmp117
+from config import *
 
-class TMP117(adafruit_tmp117.TMP117):
+
+import adafruit_tmp117
+class TMP(adafruit_tmp117.TMP117):
+    '''TEMPERATURE TMP117 I2C'''
     def get_temperature(self):
         try:
-            return round(self.temperature,2)
+            print(round(self.temperature,2))
         except BaseException:
             print("Temperature sensor not detected.\n Please check connections.")
         
-# I2C: busio.I2C = board.STEMMA_I2C()
-'''I2C bus (for TMP module)'''
+
 
 # TMP_117: TMP117 = TMP117(I2C)

@@ -3,10 +3,9 @@
 
 import lib.glactracker_gps
 from lib.glactracker_gps import GPS, GPS_GtopI2C
-from busio import UART, I2C
 import adafruit_logging as logging
 from config import *
-from mpy_decimal import DecimalNumber
+from lib.mpy_decimal import DecimalNumber
 from time import localtime,time
 import board
 from Drivers.AsyncUART import AsyncUART
@@ -105,10 +104,12 @@ class DGPS(lib.glactracker_gps.GPS_GtopI2C):
 # GPS_UART: UART = UART(board.A1, board.A2, baudrate=115200, receiver_buffer_size=2048)
 '''GPS NMEA UART for communications'''
 
-GPS_I2C: I2C = board.STEMMA_I2C()
+# GPS_I2C: I2C = board.I2C()
 ''' GPS NMEA I2C for communications'''
 
 RTCM3_UART: AsyncUART = AsyncUART(board.D1, board.D0, baudrate=115200, receiver_buffer_size=2048)
 '''GPS RTCM3 UART'''
+# RTCM3_UART: UART = UART(board.D1, board.D0, baudrate=115200, receiver_buffer_size=2048)
+# '''GPS RTCM3 UART'''
 
-GPS_DEVICE: DGPS = DGPS(GPS_I2C, RTCM3_UART)
+# GPS_DEVICE: DGPS = DGPS(I2C, RTCM3_UART)

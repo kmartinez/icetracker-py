@@ -1,3 +1,8 @@
+# from config import *
+
+# RADIO_UART = UART(board.D11, board.D10, baudrate=9600, receiver_buffer_size=2048)
+# '''XBEE RADIO UART'''
+
 """All code relating to the radio module itself
 """
 
@@ -6,12 +11,15 @@ import struct
 import binascii
 import Drivers.AsyncUART as AsyncUART
 import board
+from busio import UART
 from config import *
 import adafruit_logging as logging
 
 logger = logging.getLogger("RADIO")
 
-UART: AsyncUART.AsyncUART = AsyncUART.AsyncUART(board.D11, board.D10, baudrate=9600, receiver_buffer_size=2048)
+UART: AsyncUART.AsyncUART = AsyncUART.AsyncUART(board.D11, board.D10, baudrate=115200, receiver_buffer_size=2048)
+'''XBEE RADIO UART'''
+# RADIO_UART: UART = UART(board.D11, board.D10, baudrate=115200, receiver_buffer_size=2048)
 
 class ChecksumError(Exception):
     """Error representing a failure to verify a checksum of a packet
@@ -119,8 +127,10 @@ async def receive_packet() -> RadioPacket:
         await UART.async_read_until_forever(bytes([0x80,0x80]))
         logger.info("Packet marker received")
         size = await UART.async_read_forever(4)
+        print(size)
         logger.debug(f"PACKET_SIZE: {binascii.hexlify(size)}")
         size = struct.unpack('I', size)[0]
+        # print(size)
         if size == 0 or size > 1000:
             logger.warning("Radio received invalid packet size!")
             continue

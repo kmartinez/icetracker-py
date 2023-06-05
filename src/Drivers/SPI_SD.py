@@ -14,19 +14,17 @@ def mount_SD(SPI_SD,CS):
     try:
         print("Mounting to SD Card")
         
-        # fs = sdcardio.SDCard(spi, SPI_CS)
         fs = adafruit_sdcard.SDCard(SPI_SD, CS)
 
-        # vfs = "/measurements"
         vfs = storage.VfsFat(fs)
         storage.mount(vfs,"/sd")
         print("\nSuccessfully Mounted")
     except OSError:
         print("SD Card not active, please try again.")
-    # SPI_CS: False
 
-def read_file():
-    with open("/sd/temperature.txt", "r") as f:
+
+def read_file(path):
+    with open(path, "r") as f:
         print("Printing lines in file:")
         line = f.readline()
         while line != '':
@@ -34,9 +32,10 @@ def read_file():
             line = f.readline()
 
 
-def write_to_file():
-    with open("/sd/log.txt", "w") as f:
-        f.write("Greetings on the SD Card.!\r\n")
+def write_to_file(path,data):
+    with open(path, "w") as f:
+        f.write(data)
+
 
 def print_directory(path, tabs=0):
     for file in os.listdir(path):
@@ -64,8 +63,6 @@ def print_directory(path, tabs=0):
             print_directory(path + "/" + file, tabs + 1)
 
 
-
-print("SPI\n")
 SPI_SD = SPI(board.SCK, board.MOSI, board.MISO)
 '''SPI SMT SD CARD PINS'''
 

@@ -1,13 +1,10 @@
 import os
-import board
-import busio
-from analogio import AnalogIn
+# from analogio import AnalogIn
 import time
-import adafruit_mcp9808 # replaced with tmp117
-# import adafruit_lc709203f
+from time import sleep
 from config import *
 import gc
-
+from Drivers.I2C_Devices import *
 print("Setting up Serial Comms Connections\n")
 # from Drivers.SPI_SD import *
 print("Setting up I2Cs\n")
@@ -21,7 +18,11 @@ from Drivers.PSU import *
 # from Drivers.SWARM import *
 from Drivers.DGPS import *
 # print("Done\n")
-from Drivers.BATV import BAT_V
+from Drivers.BATV import *
+
+import gc
+print("Memory Available: {}".format(gc.mem_free()))
+gc.enable()
 
 # pin_ip = AnalogIn(board.A3)
 ADMIN_FLAG = False
@@ -51,7 +52,7 @@ def print_data_entries():
 #     # Will be reading the inputs via an ADC input, just need to decide on the actual pin to use.
 #     """ DEPRECATED AT THE MOMENT """
 #     # try:
-#     # print("Battery Voltage: %0.3fV" % (1+lc7.cell_voltage))
+#     # print("Battery Voltage: %0.3fV" % (x1+lc7.cell_voltage))
 #     # print("Battery Percentage: %0.1F %%" %lc7.cell_percent)
 #     # except BaseException:
 #     #     print("Sensor not connected.")
@@ -60,12 +61,19 @@ def print_data_entries():
 #     """ BAT V readings are inconsistent """
 #     print((pin.value * 3.3) / 65536)
 
+
 def read_bat_voltage():
-    
-    count = 5
-    while count > 0:
-        print((BAT_V.value * 3.3) / 65536 - 0.1)
-        count -= 1
+    # enable_system()
+    BATV_EN.value = True
+    print(BATV_EN.value)
+    sleep(3)
+    print(BAT_V.value)
+    return BAT_VOLTS.battery_voltage(BAT_V)
+    # BATV_EN.value = True
+    # count = 5
+    # while count > 0:
+    #     print((BAT_V.value * 5) / 65536 - 0.1)
+    #     count -= 1
 
 def gps_uart():
     print("Checking UART connection")
@@ -152,7 +160,7 @@ def gsm_test():
     print("Checking GSM Uart connection")
     # from Drivers.Radio import *
     from Drivers.PSU import GSM_UART, GSM_RST_PIN
-    import adafruit_fona as FONA
+    from adafruit_fona.adafruit_fona import FONA
 
     try:
         # RADIO_UART = busio.UART(board.D11, board.D10, baudrate=9600, receiver_buffer_size=2048) 
@@ -178,6 +186,7 @@ def gsm_test():
     except BaseException:
         print("Fona not detected.\n Check pins and SMA antenna connections.")
         pass
+    gc.collect()
 
 
 def temperature_sensor(): # uses board.SCL and board.SDA
@@ -220,6 +229,8 @@ def admincmd(c):
         print("Date/Time from DS3231 RTC Chip")
         print("Date: {}-{}-{}\n".format(RTC_DEVICE.datetime[2],RTC_DEVICE.datetime[1],RTC_DEVICE.datetime[0]))
         print("Time: {}:{}:{}\n".format(RTC_DEVICE.datetime[3],RTC_DEVICE.datetime[4],RTC_DEVICE.datetime[5]))
+        print("Memory Available: {}".format(gc.mem_free()))
+        # gc.enable()
     elif c == "2":
         print("Checking SPI Flash Chip is Mounted")
         try:
@@ -228,33 +239,48 @@ def admincmd(c):
             print(storage.getmount("/sd"))
         except ImportError:
             print("Can't Import Driver")
-
+        print("Memory Available: {}".format(gc.mem_free()))
+        # gc.collect()
     elif c == "3":
         print(f"Available Storage: ",diskfree())
+        print("Memory Available: {}".format(gc.mem_free()))
+        gc.collect()
     elif c == "4":
         from Drivers.SPI_SD import print_directory
         print(f"Files on SD Chip: ",print_directory("/sd"))
+        gc.collect()
+        print("Memory Available: {}".format(gc.mem_free()))
     elif c == "5":
         print("Reading NMEA Messages from I2C Pins on GPS board.")
         gps_i2c()
+        print("Memory Available: {}".format(gc.mem_free()))
+        gc.collect()
     elif c =="6":
         print("Reading RTCM3 Messages from UART2 Pins on GPS board.")
         gps_uart()
+        print("Memory Available: {}".format(gc.mem_free()))
+        gc.collect()
     elif c == "7":
         print("Testing XBee Radio Module is active.")
         radio_test()
+        print("Memory Available: {}".format(gc.mem_free()))
     elif c == "8":
         print("Testing GSM FONA Module is active.")
         gsm_test()
+        print("Memory Available: {}".format(gc.mem_free()))
+        gc.collect()
     elif c == "9":
         print("Testing SWARM M138 Modem is active.")
         radio_test()
+        print("Memory Available: {}".format(gc.mem_free()))
     elif c == "10":
         print("Temperature Sensor Reading:")
         temperature_sensor()
+        print("Memory Available: {}".format(gc.mem_free()))
     elif c == "11":
         print("Battery Voltage: ")
-        read_bat_voltage()
+        print(read_bat_voltage())
+        print("Memory Available: {}".format(gc.mem_free()))
     elif c == "0":
         ADMIN_FLAG = False
     else:   

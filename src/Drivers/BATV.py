@@ -1,12 +1,13 @@
 import board
-import busio
+from analogio import AnalogIn
 
 class BATV():
-    def __init__(self) -> None:
-        pass
 
-    def battery_voltage() -> float:
-        BAT_V = 3.70
-        return BAT_V
+    def battery_voltage(self, BAT_V):
+        '''Returns Battery voltage'''
+        return round(((BAT_V.value * 5) / 65536 - 0.1), 2)
 
-# BAT_V: BATV = BATV()
+
+BAT_V = AnalogIn(board.A0)
+
+BAT_VOLTS: BATV = BATV()
