@@ -1,4 +1,4 @@
-Hardware creators 2022/23
+Software and Hardware creators 2022/23
 
 Kirk Martinez,
 Sherif Attia,
