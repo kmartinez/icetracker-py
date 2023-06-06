@@ -3,9 +3,10 @@ import busio, board
 from Drivers.TMP117 import TMP117
 from Drivers.DGPS import DGPS, RTCM3_UART
 from Drivers.RTC import RTC
-from Drivers.ADXL import ADXL
+from Drivers.ADXL import *
 # from Drivers.PSU import *
 from config import GPS_EN
+from time import sleep
 
 GPS_EN.value = True
 
@@ -19,3 +20,8 @@ RTC_DEVICE: RTC = RTC(I2C)
 '''RTC Init'''
 ADXL_343: ADXL = ADXL(I2C)
 '''ADXL Accelerometer Init'''
+# xoff, yoff = ADXL_343.calib_accel()
+# while True:
+#     tx, ty = ADXL_343.get_tilts(xoff=xoff, yoff=yoff)
+#     print("{%d,%d}"%(tx,ty))
+#     sleep(0.5)
