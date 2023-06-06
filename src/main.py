@@ -1,6 +1,6 @@
-"""This module is executed by circuitpython upon startup.
-It first checks if the module was reset abnormally, and then if so shuts down gracefully.
-Otherwise, the module determines if it is configured as a base or a rover, where it will then execute the respective module
+"""run by circuitpython upon startup on every node.
+It first checks if the module was reset abnormally, and shuts down gracefully if it did.
+Otherwise, it determines if it is configured as a base or a rover, where it will then execute the respective code
 """
 
 from config import *
@@ -65,12 +65,8 @@ def get_next_alarm_min(mm):
     return nexttime
 
 if __name__ == "__main__":
-       
-  
-
       if ADMIN_IO.value:
             supervisor.set_next_code_file("./Utility/adminmode.py")
-
 
       logger.info("Current Time")
       print(RTC_DEVICE.datetime)
@@ -108,16 +104,17 @@ if __name__ == "__main__":
          watchdog.mode = WatchDogMode.RESET
          watchdog.feed()
       try:
+         # make dirs if they don't exist 
          if "data_entries" not in os.listdir("/sd/"):
             os.mkdir("/sd/data_entries")
          if "sent_data" not in os.listdir("/sd/"):
             os.mkdir("/sd/sent_data")
-         #input()
+         # run base or rover code
          if DEVICE_ID == 0:
-            logger.info("Device is a base station!")
+            logger.info("running as base")
             exec(open('./Base.py').read())
          else:
-            logger.info("Device is a rover!")
+            logger.info("running as rover")
             exec(open('./Rover.py').read())
       except BaseException as error:
          logger.critical(traceback.format_exception(type(error), error, error.__traceback__, None, False))
