@@ -17,10 +17,13 @@ import asyncio
 # from spi_sd import *
 
 # mount_SD()
-from Drivers.DGPS import GPS_DEVICE
-from Drivers.RTC import RTC_DEVICE
-from Drivers.TMP117 import TMP_117
-from Drivers.BATV import BATV 
+# from Drivers.DGPS import GPS_DEVICE
+# from Drivers.RTC import RTC_DEVICE
+# from Drivers.TMP117 import TMP_117
+from Drivers.I2C_Devices import *
+from Drivers.BATV import * 
+from Drivers.PSU import *
+
 
 logger = logging.getLogger("ROVER")
 
@@ -41,6 +44,17 @@ GPS_SAMPLES: dict[str, StatsBuffer] = {
 accurate_reading_saved: bool = False
 sent_data_start_pos: int = 999999999
 
+def truncate_degrees(longitude, latitude):
+    # lat = GPS_SAMPLES["lats"]
+    # lon = GPS_SAMPLES["longs"]
+    
+
+    lat = latitude.split(".")[0] + "." + latitude.split(".")[1][:7]
+    lon = longitude.split(".")[0] + "." + longitude .split(".")[1][:7]
+
+    return lat, lon 
+
+
 async def feed_watchdog():
     while True:
         if not DEBUG["WATCHDOG_DISABLE"]:
@@ -59,6 +73,7 @@ async def rover_loop():
     # If ACK received, shutdown
     global accurate_reading_saved
     global sent_data_start_pos
+
     while True:
         try:
             logger.info("Waiting for a radio packet")
@@ -83,19 +98,28 @@ async def rover_loop():
                 if util.var(GPS_SAMPLES["longs"].circularBuffer) < VAR_MAX and util.var(GPS_SAMPLES["lats"].circularBuffer) < VAR_MAX:
                     logger.info("Accurate reading obtained! Writing data to file")
                     #TODO: Temporary fix for RTC timing data to be able to send packets across to the base.
-                    
-                    # RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
+                    #Enabling Battery Voltage Pin to read Bat Vol
+                    enable_BATV()
+
+                    RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
+                    print(RTC_DEVICE.datetime)
+                    #TODO: Find a dynamic way to calibrate without require an human input - to be flat x and y need to be in the range of -0.5 and 0.5
+                    xoff, yoff = ADXL_343.calib_accel()
+                    # lat = str(util.mean(GPS_SAMPLES["lats"].circularBuffer)).split[0] + "." + str(util.mean(GPS_SAMPLES["lats"].circularBuffer)).split[1][:7]
                     gps_data = GPSData(
-                        # datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc)),
-                        datetime.fromtimestamp(time.mktime(RTC_DEVICE.datetime)),
+                        datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc)),
+                        # datetime.fromtimestamp(time.mktime(RTC_DEVICE.datetime)),
                         util.mean(GPS_SAMPLES["lats"].circularBuffer),
+                        # str(util.mean(GPS_SAMPLES["lats"].circularBuffer)).split[0] + "." + str(util.mean(GPS_SAMPLES["lats"].circularBuffer)).split[1][:7],
+                        # str(util.mean(GPS_SAMPLES["longs"].circularBuffer)).split[0] + "." + str(util.mean(GPS_SAMPLES["longs"].circularBuffer)).split[1][:7],
                         util.mean(GPS_SAMPLES["longs"].circularBuffer),
                         GPS_DEVICE.altitude_m,
                         GPS_DEVICE.fix_quality,
                         float(GPS_DEVICE.horizontal_dilution),
                         int(GPS_DEVICE.satellites),
-                        float(TMP_117.get_temperature()),
-                        float(BATV.battery_voltage())
+                        TMP_117.get_temperature(),
+                        BAT_VOLTS.battery_voltage(BAT_V),
+                        tuple(ADXL_343.get_tilts(xoff=xoff, yoff=yoff))
                         )
                     #TODO: Need to update code to support SPI_SD chip 
                     with open("/sd/data_entries/" + gps_data.timestamp.isoformat().replace(":", "_"), "w") as file:
@@ -131,4 +155,4 @@ async def rover_loop():
 
 if __name__ == "__main__":
     asyncio.run(asyncio.wait_for_ms(asyncio.gather(rover_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
-    PSU.shutdo
+    PSU.shutdown()

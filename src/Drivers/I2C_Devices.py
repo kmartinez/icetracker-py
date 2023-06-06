@@ -20,8 +20,11 @@ RTC_DEVICE: RTC = RTC(I2C)
 '''RTC Init'''
 ADXL_343: ADXL = ADXL(I2C)
 '''ADXL Accelerometer Init'''
-# xoff, yoff = ADXL_343.calib_accel()
+
+# tx, ty = ADXL_343.get_tilts(xoff=xoff, yoff=yoff)
+# print(type(tx))
 # while True:
-#     tx, ty = ADXL_343.get_tilts(xoff=xoff, yoff=yoff)
-#     print("{%d,%d}"%(tx,ty))
+#     print(tuple(ADXL_343.get_tilts(xoff=xoff, yoff=yoff)))
+    
+#     # print("{%d,%d}"%(tx))
 #     sleep(0.5)

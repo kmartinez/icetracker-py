@@ -22,15 +22,15 @@ class ADXL(ADXL343):
     def calib_accel(self):
         # interactive - needed once only and values need to go in calib file
         print("Starting calibration, please make sure board is flat.")
-        # while True:
-        #     x,y,z = self.acceleration
-        #     if (x < 0.1 and x > 0.0) and (y < 0.1 and y > 0.0):
-        #         print("Board is flat.\n Beginning Calibration.")
-        #         break
-        #     else:
-        #         continue
+        while True:
+            x,y,z = self.acceleration
+            if (x > -0.3 and x < 0.2) and (y > 0.0 and y > 0.4):
+                print("Board is flat.\n Beginning Calibration.")
+                break
+            else:
+                continue
         # print("set flat then press enter")
-        input()
+        # input()
         avx = 0.0
         avy = 0.0
         for n in range(10):
