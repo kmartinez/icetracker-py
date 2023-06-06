@@ -14,6 +14,7 @@ from microcontroller import watchdog
 import adafruit_logging as logging
 import time
 import asyncio
+# TODO: remove commented out code, remove adxl offsets!
 # from spi_sd import *
 
 # mount_SD()
@@ -28,7 +29,7 @@ from Drivers.PSU import *
 logger = logging.getLogger("ROVER")
 
 
-
+# default is 16 do we need 32 ?
 DecimalNumber.set_scale(32)
 SD_MAX = DecimalNumber("0.0001")
 VAR_MAX = SD_MAX ** 2
@@ -96,9 +97,9 @@ async def rover_loop():
                 logger.debug(f"VARIANCE_LONG: {debug_variance}")
 
                 if util.var(GPS_SAMPLES["longs"].circularBuffer) < VAR_MAX and util.var(GPS_SAMPLES["lats"].circularBuffer) < VAR_MAX:
-                    logger.info("Accurate reading obtained! Writing data to file")
+                    logger.info("Accurate fix: Writing data file")
                     #TODO: Temporary fix for RTC timing data to be able to send packets across to the base.
-                    #Enabling Battery Voltage Pin to read Bat Vol
+                    #Enabling Battery Voltage Pin to read Bat V
                     enable_BATV()
 
                     RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
@@ -121,7 +122,7 @@ async def rover_loop():
                         BAT_VOLTS.battery_voltage(BAT_V),
                         tuple(ADXL_343.get_tilts(xoff=xoff, yoff=yoff))
                         )
-                    #TODO: Need to update code to support SPI_SD chip 
+                     
                     with open("/sd/data_entries/" + gps_data.timestamp.isoformat().replace(":", "_"), "w") as file:
                         file.write(gps_data.to_json() + "\n")
                     logger.info("File write complete!")
@@ -143,14 +144,14 @@ async def rover_loop():
                 radio.broadcast_data(PacketType.FIN, struct.pack(FormatStrings.PACKET_DEVICE_ID, packet.sender))
 
         elif packet.type == PacketType.ACK and struct.unpack(radio.FormatStrings.PACKET_DEVICE_ID, packet.payload)[0] == DEVICE_ID:
-            #ACK received, which means the base received a data message
-            #We can now safely delete said message from the blob
-            logger.info("ACK received from base, deleting sent data")
+            #ACK received, base received our data
+            #now safe to delete message from the store
+            logger.info("Data received by base, deleting")
             if len(os.listdir("/sd/data_entries/")) > 0:
                 os.remove("/sd/data_entries/" + os.listdir("/sd/data_entries/")[0])
             
         elif packet.type == PacketType.FIN and struct.unpack(FormatStrings.PACKET_DEVICE_ID, packet.payload)[0] == DEVICE_ID:
-            logger.info("Base has given OK to shutdown!")
+            logger.info("Base has given OK to shutdown")
             break
 
 if __name__ == "__main__":
