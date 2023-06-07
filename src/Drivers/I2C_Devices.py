@@ -5,7 +5,7 @@ from Drivers.DGPS import DGPS, RTCM3_UART
 from Drivers.RTC import RTC
 from Drivers.ADXL import *
 # from Drivers.PSU import *
-from config import GPS_EN
+from config import *
 from time import sleep
 
 GPS_EN.value = True

@@ -1,15 +1,15 @@
 from config import *
-# TODO: turn print into an error log and STORE VALUE
 
-import adafruit_tmp117
-class TMP(adafruit_tmp117.TMP117):
+from adafruit_tmp117 import TMP117
+class TMP117(TMP117):
     '''TEMPERATURE TMP117 I2C'''
+    temp: float
     def get_temperature(self):
+        temp = self.temperature
         try:
-            print(round(self.temperature,2))
+            return round((temp),2)
         except BaseException:
-            print("Temperature sensor not detected!\n")
+            logging.critical("Temperature sensor not detected.\n Please check connections.")
         
-
 
 # TMP_117: TMP117 = TMP117(I2C)

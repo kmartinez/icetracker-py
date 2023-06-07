@@ -2,7 +2,7 @@ import adafruit_logging as logging
 import board
 from busio import UART, SPI, I2C
 from digitalio import DigitalInOut
-from Drivers.I2C_Devices import *
+# from Drivers.I2C_Devices import *
 
 """PIN Definitions"""
 # I2C = board.I2C()
@@ -15,28 +15,6 @@ GPS_EN.switch_to_output(value=False)
 BATV_EN = DigitalInOut(board.A1)
 BATV_EN.switch_to_output(value=False)
 '''ENABLE BATV INPUT'''
-
-def calibrate_offset():
-    """Calibrates offset by populating once
-
-    Returns:
-        float: atan of calibrated offset to one slope
-    """
-    ADXL_343.offset = (0,0,0)
-    x = ADXL_343.raw_x
-    y = ADXL_343.raw_y
-    z = ADXL_343.raw_z
-
-    ADXL_343.offset(
-        round(-x / 8),
-        round(-y / 8),
-        round(-(z - 250) / 8), 
-    )
-    return ADXL_343.offset
-    # x, y ,z = ADXL_343.offset
-    # slope = ADXL_343.accelerometer_to_slope(x,y)
-    # return slope
-
 
 
 GLOBAL_FAILSAFE_TIMEOUT = 120

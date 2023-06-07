@@ -1,11 +1,8 @@
 import board
 import time
 import math
-from config import GPS_EN
 from adafruit_adxl34x import ADXL343
-# TODO: pickup offsets from board's config file and make an admin command to populate it once. Maybe atan(result) to one slope?
-GPS_EN.value = True
-i2c = board.I2C() # uses board.SCL and board.SDA
+
 
 class ADXL(ADXL343):
     def __init__(self, *args):
