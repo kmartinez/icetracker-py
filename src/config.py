@@ -32,9 +32,10 @@ def calibrate_offset():
         round(-y / 8),
         round(-(z - 250) / 8), 
     )
-    x, y ,z = ADXL_343.offset
-    slope = ADXL_343.accelerometer_to_slope(x,y)
-    return slope
+    return ADXL_343.offset
+    # x, y ,z = ADXL_343.offset
+    # slope = ADXL_343.accelerometer_to_slope(x,y)
+    # return slope
 
 
 
