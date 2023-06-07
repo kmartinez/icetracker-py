@@ -1,5 +1,5 @@
 from config import *
-
+# TODO: turn print into an error log and STORE VALUE
 
 import adafruit_tmp117
 class TMP(adafruit_tmp117.TMP117):
@@ -8,7 +8,7 @@ class TMP(adafruit_tmp117.TMP117):
         try:
             print(round(self.temperature,2))
         except BaseException:
-            print("Temperature sensor not detected.\n Please check connections.")
+            print("Temperature sensor not detected!\n")
         
 
 
