@@ -11,7 +11,7 @@ from config import *
 from Drivers.RTC import *
 from RadioMessages.GPSData import *
 # from Drivers.DGPS import GPS_DEVICE
-from Drivers.I2C_Devices import GPS_DEVICE, RTC_DEVICE, shutdown
+from Drivers.I2C_Devices import GPS_DEVICE, RTC_DEVICE
 import Drivers.Radio as radio
 from Drivers.Radio import PacketType
 
@@ -36,33 +36,33 @@ logger = logging.getLogger("BASE")
 #this is a global variable so i can still get the data even if the rover loop times out
 finished_rovers: dict[int, bool] = {}
 # when to send data
-COMMS_TIME = [0, 3, 6, 9, 12, 15, 18, 21] 
+# COMMS_TIME = [0, 3, 6, 9, 12, 15, 18, 21] 
 
 # get current time from GPS or RTC? Probably best to be GPS...
 # datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc))
 
 
-# async def clock_calibrator():
-#     """Task that waits until the GPS has a timestamp and then calibrates the RTC using GPS time
-#     """
-#     gc.collect()
-#     while GPS_DEVICE.timestamp_utc == None:
-#         while not GPS_DEVICE.update():
-#             pass
-#         RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
+async def clock_calibrator():
+    """Task that waits until the GPS has a timestamp and then calibrates the RTC using GPS time
+    """
+    gc.collect()
+    while GPS_DEVICE.timestamp_utc == None:
+        while not GPS_DEVICE.update():
+            pass
+        RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
 
 # Untested
-def clock_calibrator():
-    """Task that runs a flag to check if RTC timestamp has deviated and needs to be calibrated with GPS time."""
-    rtc_calibrated = False
-    while GPS_DEVICE.timestamp_utc == None:
-            while not GPS_DEVICE.update():
-                pass
+# def clock_calibrator():
+#     """Task that runs a flag to check if RTC timestamp has deviated and needs to be calibrated with GPS time."""
+#     rtc_calibrated = False
+#     while GPS_DEVICE.timestamp_utc == None:
+#             while not GPS_DEVICE.update():
+#                 pass
     
-    while not rtc_calibrated:
-        if RTC_DEVICE.datetime != GPS_DEVICE.timestamp_utc:
-            RTC_DEVICE.datetime = GPS_DEVICE
-            rtc_calibrated = True
+#     while not rtc_calibrated:
+#         if RTC_DEVICE.datetime != GPS_DEVICE.timestamp_utc:
+#             RTC_DEVICE.datetime = GPS_DEVICE
+#             rtc_calibrated = True
         
 
 

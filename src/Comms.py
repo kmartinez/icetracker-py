@@ -10,7 +10,7 @@ import adafruit_fona.adafruit_fona_socket as cellular_socket
 from Drivers.SPI_SD import *
 import time
 from Drivers.PSU import * #EVERYTHING FROM THIS IS READONLY (you can use write functions, but cannot actually modify a variable)
-from Drivers.I2C_Devices import *
+# from Drivers.I2C_Devices import shutdown
 # import Drivers.Radio as radio
 # from Drivers.Radio import PacketType
 from config import *
@@ -95,18 +95,19 @@ if __name__ == "__main__":
     # except UnicodeError:
     #     logger.critical("FONA needs to be power cycled. Incorrect AT commands received.")
 
-
+    #TODO: add checker to make sure that the contents are > 0
     http_payload = []
     data_paths = os.listdir("/sd/data_entries/")[-1:]
-    for path in data_paths:
-        with open("/sd/data_entries/" + path, "r") as file:
-            try:
-                http_payload.append(json.loads(file.readline()))
-            except:
-                logger.warning(f"Invalid saved data found at /data_entries/{path}")
-                #os.remove("/data_entries/" + path) #This could be dangerous - DON'T DO!
-            #TODO: RAM limit
-    logger.debug(f"HTTP_PAYLOAD: {http_payload}")
+    if len(data_paths) > 0:
+        for path in data_paths:
+            with open("/sd/data_entries/" + path, "r") as file:
+                try:
+                    http_payload.append(json.loads(file.readline()))
+                except:
+                    logger.warning(f"Invalid saved data found at /data_entries/{path}")
+                    #os.remove("/data_entries/" + path) #This could be dangerous - DON'T DO!
+                #TODO: RAM limit
+        logger.debug(f"HTTP_PAYLOAD: {http_payload}")
 
     try:
         logger.info("Sending HTTP request!")

@@ -1,4 +1,5 @@
-import Drivers.PSU as PSU
+from Drivers.I2C_Devices import GPS_DEVICE, RTC_DEVICE, ADXL_343, TMP_117, shutdown
+# import Drivers.PSU as PSU
 import Drivers.Radio as radio
 from Drivers.Radio import PacketType
 import struct
@@ -23,7 +24,7 @@ from microcontroller import reset
 # from Drivers.DGPS import GPS_DEVICE
 # from Drivers.RTC import RTC_DEVICE
 # from Drivers.TMP117 import TMP_117
-from Drivers.I2C_Devices import *
+
 from Drivers.BATV import * 
 from Drivers.PSU import *
 
@@ -168,17 +169,17 @@ async def rover_loop():
     shutdown()
 
 if __name__ == "__main__":
-    try:
-        gc.collect()
-        print("Point 2 Available memory: {} bytes".format(gc.mem_free()))
-        asyncio.run(asyncio.wait_for_ms(asyncio.gather(rover_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
-        shutdown()
-    except BaseException:
-    #     print("Device ran out of memory. Resetting.")
-    #     reset()
-        # PSU.shutdown()
-        if RTC_DEVICE.alarm1_status:
-            shutdown()
-        else:
-            # reset()
-            supervisor.reload()
+    # try:
+    gc.collect()
+    print("Point 2 Available memory: {} bytes".format(gc.mem_free()))
+    asyncio.run(asyncio.wait_for_ms(asyncio.gather(rover_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
+    shutdown()
+    # except BaseException:
+    # #     print("Device ran out of memory. Resetting.")
+    # #     reset()
+    #     # PSU.shutdown()
+    #     if RTC_DEVICE.alarm1_status:
+    #         shutdown()
+    #     else:
+    #         # reset()
+    #         supervisor.reload()

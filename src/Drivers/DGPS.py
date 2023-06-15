@@ -1,13 +1,11 @@
-"""GPS functions
-note I2C is used to read GPS
-TODO: Fix 4 ONLY
+"""All code relating to the GPS extensions and GPS module communications
 """
 
-import lib.glactracker_gps
-from lib.glactracker_gps import GPS, GPS_GtopI2C
+# import lib.glactracker_gps
+import glactracker_gps 
 import adafruit_logging as logging
 from config import *
-from lib.mpy_decimal import DecimalNumber
+from mpy_decimal import DecimalNumber
 from time import localtime,time
 import board
 from Drivers.AsyncUART import AsyncUART
@@ -15,13 +13,13 @@ import binascii
 
 logger = logging.getLogger("GPS")
 
-class DGPS(lib.glactracker_gps.GPS_GtopI2C):
+class DGPS(glactracker_gps.GPS_GtopI2C):
     """Extended GPS class that allows use of Differential GPS information
     """
     # def __init__(self, uart: UART, rtcm_uart: AsyncUART, debug: bool = False) -> None:
     #     super().__init__(uart, debug)
     #     self.rtcm_uart = rtcm_uart
-    
+    # TODO: replace `uart` with i2c protocol
     def __init__(self, i2c: I2C, rtcm_uart: AsyncUART, debug: bool = False) -> None:
         super().__init__(i2c, address=0x42, debug=False)
         self.rtcm_uart = rtcm_uart
@@ -32,13 +30,13 @@ class DGPS(lib.glactracker_gps.GPS_GtopI2C):
         :param rtcm3_data: RTCM3 messages to be sent
         :type rtcm3_data: bytes
         """
-        logger.debug(f"writing RTCM to GPS: {binascii.hexlify(rtcm3_data)}")
+        logger.debug(f"CALIBRATING_RTCM3_BYTES: {binascii.hexlify(rtcm3_data)}")
         self.rtcm_uart.write(rtcm3_data)
 
     def to_dict(self):
-        """Returns a dict of GPS data
+        """Returns a dictionary of relevant GPS attributes
 
-        :return: GPS info dict
+        :return: GPS info dictionary (can be converted to JSON)
         :rtype: dict
         """
         return {
@@ -58,15 +56,15 @@ class DGPS(lib.glactracker_gps.GPS_GtopI2C):
         :return: Update success state
         :rtype: bool
         """
-        logger.info("Updating GPS")
+        logger.info("Updating GPS!")
 
-        device_updated: bool = self.update() #Potentially garbage line so we continue anyway
+        device_updated: bool = self.update() #Potentially garbage line so we continue anyway even if it doesn't actually work
         while self.update():
             device_updated = True #Performs as many GPS updates as there are NMEA strings available in UART
 
         if (DEBUG["FAKE_DATA"]):
             #Fake data
-            logger.warning("Fake data mode is on!")
+            logger.warning("Fake data mode is on! No real GPS data will be used on this device!!!!")
             self.latitude = DecimalNumber("59.3")
             self.longitude = DecimalNumber("-1.2")
             self.altitude_m = 5002.3
@@ -77,22 +75,22 @@ class DGPS(lib.glactracker_gps.GPS_GtopI2C):
         
         logger.debug(f"GPS_DATA: {self.to_dict()}")
 
-        # Fix received?
+        # If NMEA received back
         if self.fix_quality == 4 or self.fix_quality == 5:
-            logger.info("GPS has fix")
+            logger.info("GPS has a high quality fix!")
             return device_updated
         else:
-            logger.info("GPS no fix yet")
+            logger.info("GPS quality is currently insufficient")
             return False
     
     async def get_rtcm3_message(self):
         """Gets RTCM3 correction messages from the GPS module on the provided RTCM3 UART
-        Base only!
-        :return: Bytes object of the 5 RTCM3 messages
+
+        :return: Bytes object of the 5 RTCM3 messages (they are different messages but we don't know why exactly)
         :rtype: bytes
         """
         # Read UART for newline terminated data - produces bytestr
-        logger.info("Get RTCM3 from GPS")
+        logger.info("Retrieving RTCM3 from UART")
         RTCM3_UART.reset_input_buffer()
         await RTCM3_UART.aysnc_read_RTCM3_packet_forever() #Garbled maybe
         data = bytearray()
@@ -100,7 +98,7 @@ class DGPS(lib.glactracker_gps.GPS_GtopI2C):
             d = await RTCM3_UART.aysnc_read_RTCM3_packet_forever()
             data += d
         logger.debug(f"RTCM3_BYTES: {binascii.hexlify(bytes(data))}")
-        logger.info("RTCM3 read from GPS")
+        logger.info("RTCM3 obtained from UART")
         return bytes(data)
 
 # GPS_UART: UART = UART(board.A1, board.A2, baudrate=115200, receiver_buffer_size=2048)
