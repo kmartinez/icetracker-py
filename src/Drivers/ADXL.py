@@ -49,3 +49,23 @@ class ADXL(ADXL343):
         tilt_y = math.degrees(math.asin(y / mag))
         return round(tilt_x), round(tilt_y)
 
+    def calibrate_offset(self):
+        """Calibrates offset by populating once
+
+        Returns:
+            float: atan of calibrated offset to one slope
+        """
+        # offset in lab: (2,-2,0)
+        # offset outside: tbc 
+        self.offset = (0,0,0)
+        x = self.raw_x
+        y = self.raw_y
+        z = self.raw_z
+
+        self.offset = (
+            round(-x / 8),
+            round(-y / 8),
+            round(-(z - 250) / 8), 
+        )
+        return self.offset
+

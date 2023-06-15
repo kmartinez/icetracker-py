@@ -742,6 +742,7 @@ class GPS_GtopI2C(GPS):
             self._internalbuffer.append(char[0])
         if self._internalbuffer and self._internalbuffer[-1] == 0x0A:
             ret = bytearray(self._internalbuffer)
+            print(len(ret))
             self._internalbuffer = []  # reset the buffer to empty
             return ret
         return None  # no completed data yet
