@@ -89,19 +89,19 @@ async def rover_data_loop():
         try:
             logger.info("Waiting for a radio packet")
             packet = await radio.receive_packet()
-            logger.info(f"Radio packet received from device {packet.sender}")
+            logger.info(f"packet received from {packet.sender}")
         except radio.ChecksumError:
-            logger.warning("Radio has received an invalid packet")
+            logger.warning("Radio received invalid packet")
             continue
         if packet.sender < 0:
             logger.warning("""Packet sender's ID is out of bounds!
-            Please check the sending device's ID in its config and change it!""")
+            check its config""")
             continue
 
         if packet.type == PacketType.NMEA:
             logger.info("Received radio packet is GPS data",)
             if len(packet.payload) < 0:
-                logger.warning("Empty GPS data received!!!")
+                logger.warning("Empty GPS data received")
                 continue
             data = GPSData.from_json(packet.payload.decode('utf-8'))
             with open("/sd/data_entries/" + str(packet.sender) + "-" + data["timestamp"].replace(":", "_"), "w") as file:
@@ -114,7 +114,7 @@ async def rover_data_loop():
         elif packet.type == PacketType.FIN and struct.unpack(radio.FormatStrings.PACKET_DEVICE_ID, packet.payload)[0] == DEVICE_ID:
             finished_rovers[packet.sender] = True
             radio.send_response(PacketType.FIN, packet.sender)
-        logger.info("Received radio packet successfully processed")
+        logger.info("Received radio packet processed OK")
     logger.info("Loop for receiving rover data has ended")
                 
 
@@ -212,12 +212,11 @@ if __name__ == "__main__":
 
 
     #     try:
-    #         logger.info("Sending HTTP request!")
+    #         logger.info("Sending HTTP request")
     #         # response = requests.post("http://iotgate.ecs.soton.ac.uk/glacsweb/api/ingest", json=http_payload)
     #         response = requests.post("http://iotgate.ecs.soton.ac.uk/myapp", json=http_payload)
     #         logger.info(f"STATUS CODE: {response.status_code}, REASON: {response.reason}")
     #         #requests.post("http://google.com/glacsweb/api/ingest", json=http_payload)
-    #         #TODO: check if response OK
 
     #         # If data ingested correcttly, move files sent from /data_entries/ to /sent_data/
     #         if str(response.status_code) == "200":
