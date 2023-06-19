@@ -25,6 +25,10 @@ DEVICE_ID = 18
 '''ID of this device (Will become base station if is 0)'''
 ROVER_COUNT = 1
 
+# accel offsets (find manually and enter here)
+ACC_X_OFF = 0
+ACC_Y_OFF = 0
+
 DEBUG =  {
     "FAKE_DATA": False, #Ignores actual GPS data and just uses fake static data instead
     "WATCHDOG_DISABLE": True #Disables watchdog resets so you can debug things
