@@ -43,7 +43,7 @@ __version__ = "3.10.6"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_GPS.git"
 
 
-_GPSI2C_DEFAULT_ADDRESS = const(0x10)
+_GPSI2C_DEFAULT_ADDRESS = const(0x42)
 
 _GLL = 0
 _RMC = 1
@@ -710,7 +710,8 @@ class GPS_GtopI2C(GPS):
                 # 'stuffed' newlines and then append to our result array for byteification
                 i2c.readinto(self._charbuff)
                 char = self._charbuff[0]
-                if (char == 0x0A) and (self._lastbyte != 0x0D):
+                if ((char == 0x0A)  and (self._lastbyte != 0x0D)): # or (char == 0xff): #skip with 0xff
+                    # if (char == 0xff):
                     continue  # skip duplicate \n's!
                 result.append(char)
                 self._lastbyte = char  # keep track of the last character approved
@@ -742,7 +743,6 @@ class GPS_GtopI2C(GPS):
             self._internalbuffer.append(char[0])
         if self._internalbuffer and self._internalbuffer[-1] == 0x0A:
             ret = bytearray(self._internalbuffer)
-            print(len(ret))
             self._internalbuffer = []  # reset the buffer to empty
             return ret
         return None  # no completed data yet
