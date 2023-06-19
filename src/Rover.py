@@ -87,7 +87,7 @@ async def rover_loop():
             continue
         # If incoming message is tagged as RTCM3
         if packet.type == PacketType.RTCM3 and not accurate_reading_saved:
-            logger.info("RTCM3 data received and we have not finished obtaining a reading")
+            logger.info("receiving RTCM3")
             GPS_DEVICE.rtk_calibrate(packet.payload)
             gc.collect()
             print("Point 4 Available memory: {} bytes".format(gc.mem_free()))
@@ -102,15 +102,16 @@ async def rover_loop():
                 logger.debug(f"VARIANCE_LONG: {debug_variance}")
 
                 if util.var(GPS_SAMPLES["longs"].circularBuffer) < VAR_MAX and util.var(GPS_SAMPLES["lats"].circularBuffer) < VAR_MAX:
-                    logger.info("Accurate reading obtained! Writing data to file")
-                    #TODO: Temporary fix for RTC timing data to be able to send packets across to the base.
-                    #Enabling Battery Voltage Pin to read Bat Vol
+                    logger.info("Fix obtained: writing to file")
+                    #TODO: Temporary fix for RTC timing data to be able to send packets across to the base.???
+                    #Enabling Battery Voltage Pin to read Bat Vol?? why not just read it
                     enable_BATV()
                     sleep(2)
                     
                     RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
                     print(RTC_DEVICE.datetime)
                     #TODO: Find a dynamic way to calibrate without require an human input - to be flat x and y need to be in the range of -0.5 and 0.5
+                    # DELETE this and get static values from config file later
                     xoff, yoff = ADXL_343.calib_accel()
                     # lat = str(util.mean(GPS_SAMPLES["lats"].circularBuffer)).split[0] + "." + str(util.mean(GPS_SAMPLES["lats"].circularBuffer)).split[1][:7]
                     gps_data = GPSData(
@@ -128,7 +129,7 @@ async def rover_loop():
                         BAT_VOLTS.battery_voltage(BAT_V),
                         tuple(ADXL_343.get_tilts(xoff=xoff, yoff=yoff))
                         )
-                    #TODO: Need to update code to support SPI_SD chip 
+                    #TODO: Need to update code to support SPI_SD chip ???
                     with open("/sd/data_entries/" + gps_data.timestamp.isoformat().replace(":", "_"), "w") as file:
                         file.write(gps_data.to_json() + "\n")
                     logger.info("File write complete!")
@@ -138,9 +139,9 @@ async def rover_loop():
                     print("Point 7 Available memory: {} bytes".format(gc.mem_free()))
         elif packet.type == PacketType.RTCM3:
             #RTCM3 received and we have collected our data for this session
-            #Send the oldest data point we have
-            #If there aren't any, delete
-            logger.info("Radio packet received and accurate reading is obtained!")
+            #Send the data point to base
+            #If there aren't any, delete??? THIS IS WIERD
+            logger.info("got RTCM and accurate reading")
             remaining_paths = os.listdir("/sd/data_entries/")
             if (len(remaining_paths) > 0):
                 logger.info("Sending reading to base")
@@ -148,24 +149,24 @@ async def rover_loop():
                     data_to_send = file.readline()
                     radio.broadcast_data(PacketType.NMEA, data_to_send.encode('utf-8'))
             else:
-                logger.info("Telling base that we're finished!")
+                logger.info("Telling base that we're finished")
                 radio.broadcast_data(PacketType.FIN, struct.pack(FormatStrings.PACKET_DEVICE_ID, packet.sender))
 
         elif packet.type == PacketType.ACK and struct.unpack(radio.FormatStrings.PACKET_DEVICE_ID, packet.payload)[0] == DEVICE_ID:
-            #ACK received, which means the base received a data message
-            #We can now safely delete said message from the blob
+            #ACK received: base received our data
+            #We can now safely delete from SD
             logger.info("ACK received from base, deleting sent data")
             if len(os.listdir("/sd/data_entries/")) > 0:
                 os.remove("/sd/data_entries/" + os.listdir("/sd/data_entries/")[0])
             
         elif packet.type == PacketType.FIN and struct.unpack(FormatStrings.PACKET_DEVICE_ID, packet.payload)[0] == DEVICE_ID:
-            logger.info("Base has given OK to shutdown!")
+            logger.info("Base said OK to shutdown")
             gc.collect()
             print("Point 8 Available memory: {} bytes".format(gc.mem_free()))
             # GPS_EN.value = False
             # shutdown()
             break
-    logger.info("ROVER COMPLETED ITS FINAL STAGE - SHUTTING DOWN.")
+    logger.info("ROVER COMPLETED: SHUTTING DOWN.")
     shutdown()
 
 if __name__ == "__main__":
