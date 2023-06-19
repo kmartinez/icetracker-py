@@ -1,4 +1,4 @@
-# PLACEHOLDER FOR ALL I2C Connected DEVICES
+# sort out ALL I2C Connected DEVICES
 import busio, board
 from Drivers.TMP117 import TMP117
 from Drivers.DGPS import DGPS, RTCM3_UART
@@ -28,7 +28,7 @@ except RuntimeError:
 # tx, ty = ADXL_343.get_tilts(xoff=xoff, yoff=yoff)
 # print(type(tx))
 # while True:
-#     print(tuple(ADXL_343.get_tilts(xoff=xoff, yoff=yoff)))
+#     print(tuple(ADXL_343.get_tilts(xoff=ACC_X_OFF, yoff=ACC_Y_OFF)))
     
 #     # print("{%d,%d}"%(tx))
 #     sleep(0.5)
