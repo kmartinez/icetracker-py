@@ -14,8 +14,8 @@ import supervisor
 logger = logging.getLogger("MAIN_FILE")
 rtc.set_time_source(RTC_DEVICE)
 
-TIME_INTERVAL = 20
-WAKEUP_INTERVAL = 10
+# to be deleted? TIME_INTERVAL = 20
+# to be deleted? WAKEUP_INTERVAL = 10
 RTC_TIMEOUT = 90
 
 COMMS_TIME = [0, 3, 6, 9, 12,13, 15, 18, 21] 
@@ -149,15 +149,15 @@ if __name__ == "__main__":
             os.mkdir("/sd/sent_data")
          #input()
         if RTC_DEVICE.datetime[3] in COMMS_TIME and RTC_DEVICE.datetime[4] < 30:
-            logger.info('Device meets Comms Time - \n Enabling GSM.')
+            logger.info('Comms Time')
             exec(open('./Comms.py').read())
         else:
-            logger.info("Outside COMMS Window")
+            logger.info("not COMMS time")
             if DEVICE_ID == 100:
-                logger.info("Device is a base station!")
+                logger.info("run base")
                 exec(open('./Base.py').read())
             else:
-                logger.info("Device is a rover!")
+                logger.info("run rover")
                 exec(open('./Rover.py').read())
     except BaseException as error:
         #  logger.critical(traceback.format_exception(type(error), error, error.__traceback__, None, False))
