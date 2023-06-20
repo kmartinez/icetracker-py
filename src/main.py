@@ -1,7 +1,7 @@
 from config import *
 import os
 import Drivers.PSU as PSU
-from Drivers.I2C_Devices import RTC_DEVICE, shutdown
+from Drivers.I2C_Devices import RTC_DEVICE
 from Drivers.SPI_SD import *
 import traceback
 from microcontroller import watchdog
@@ -14,15 +14,13 @@ import supervisor
 logger = logging.getLogger("MAIN_FILE")
 rtc.set_time_source(RTC_DEVICE)
 
-# to be deleted? TIME_INTERVAL = 20
-# to be deleted? WAKEUP_INTERVAL = 10
-RTC_TIMEOUT = 90
 
-COMMS_TIME = [0, 3, 6, 9, 12,13, 15, 18, 21] 
+COMMS_TIME = [0, 3, 6, 9, 12, 15, 18, 21] #Final version should be 12
 
 WAKE_UP_WINDOW_HRS  = [0, 3, 6, 9, 12, 15, 18, 21] 
+WAKE_UP_WINDOW_MINS = [0, 20, 40]
 # WAKE_UP_WINDOW_MINS = [0,5,10,15,20,25,30,35,40,45,50,55]
-WAKE_UP_WINDOW_MINS = [0,3,6,9,12,15,18,21,24,27,30,33,36,39,42,45,48,51,54,57]
+# WAKE_UP_WINDOW_MINS = [0,3,6,9,12,15,18,21,24,27,30,33,36,39,42,45,48,51,54,57]
 
 def get_next_alarm_hour(hh):
     nexttime = None
@@ -90,18 +88,18 @@ if __name__ == "__main__":
 
     logger.info("Current Time")
     print(RTC_DEVICE.datetime)
-    (YY, MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
-    nextwake_MM = get_next_alarm_min(mm)
-    nextwake_HH = get_next_alarm_hour(hh)
-    logger.info("NEXT WAKEUP TIME (Hour) {}".format(nextwake_HH))
+    # (YY, MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
+    # nextwake_MM = get_next_alarm_min(mm)
+    # nextwake_HH = get_next_alarm_hour(hh)
+    # logger.info("NEXT WAKEUP TIME (Hour) {}".format(nextwake_HH))
     # changed daily into monthly - should it be running at hourly??
     # RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,nextwake_HH,0,0,wday,yday,dst]), "daily")
 
-    # (YY, MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
-    # nextwake_MM=  get_next_alarm_min(mm)
-    # print(nextwake_MM)
-    # #   print(hour)
-    # logger.info("NEXT WAKEUP TIME (Minutes) {}".format(nextwake_MM))
+    (YY, MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
+    nextwake_MM=  get_next_alarm_min(mm)
+    print(nextwake_MM)
+    #   print(hour)
+    logger.info("NEXT WAKEUP TIME (Minutes) {}".format(nextwake_MM))
     # RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,hh,nextwake_MM,0,wday,yday,dst]), "hourly")
     print(RTC_DEVICE.alarm1)
 
@@ -113,21 +111,21 @@ if __name__ == "__main__":
     if RTC_DEVICE.alarm1_status:
         if RTC_DEVICE.alarm_is_in_future():
             logger.critical("Abnormal reset detected!!! Shutting device down")
-            shutdown()
+            PSU.shutdown()
         else:
-
-            (YY, MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
-            nextwake_MM = get_next_alarm_min(mm)
-            nextwake_HH = get_next_alarm_hour(hh)
-            logger.info("NEXT WAKEUP TIME (Hour) {}".format(nextwake_HH))
-            # changed daily into monthly - should it be running at hourly??
-            RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,nextwake_HH,0,0,wday,yday,dst]), "daily")
-
 
             # (YY, MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
             # nextwake_MM = get_next_alarm_min(mm)
-            # logger.info("NEXT WAKEUP TIME (Minutes) {}".format(nextwake_MM))
-            # RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,hh,nextwake_MM,0,wday,yday,dst]), "hourly")
+            # nextwake_HH = get_next_alarm_hour(hh)
+            # logger.info("NEXT WAKEUP TIME (Hour) {}".format(nextwake_HH))
+            # # changed daily into monthly - should it be running at hourly??
+            # RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,nextwake_HH,0,0,wday,yday,dst]), "daily")
+
+
+            (YY, MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
+            nextwake_MM = get_next_alarm_min(mm)
+            logger.info("NEXT WAKEUP TIME (Minutes) {}".format(nextwake_MM))
+            RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,hh,nextwake_MM,0,wday,yday,dst]), "hourly")
             print(RTC_DEVICE.alarm1)
         RTC_DEVICE.alarm1_interrupt = True
 
@@ -148,12 +146,12 @@ if __name__ == "__main__":
         if "sent_data" not in os.listdir("/sd/"):
             os.mkdir("/sd/sent_data")
          #input()
-        if RTC_DEVICE.datetime[3] in COMMS_TIME and RTC_DEVICE.datetime[4] < 30:
+        if RTC_DEVICE.datetime[3] in COMMS_TIME and RTC_DEVICE.datetime[4] < 15:
             logger.info('Comms Time')
             exec(open('./Comms.py').read())
         else:
             logger.info("not COMMS time")
-            if DEVICE_ID == 100:
+            if DEVICE_ID >= 100:
                 logger.info("run base")
                 exec(open('./Base.py').read())
             else:
@@ -165,4 +163,4 @@ if __name__ == "__main__":
             traceback.print_exception(type(error),error,error.__traceback__,None,file,False)
         traceback.print_exception(type(error),error,error.__traceback__,None,None,False)
     finally:
-        shutdown()
+        PSU.shutdown()
