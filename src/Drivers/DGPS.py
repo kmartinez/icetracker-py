@@ -35,13 +35,14 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
         }
     
     def update_with_all_available(self):
-        logger.info("Updating GPS!")
+        logger.info("read GPS")
 
         gc.collect()
         print("Point 5 Available memory: {} bytes".format(gc.mem_free()))
 
-        device_updated: bool = self.update() #Potentially garbage line so we continue anyway even if it doesn't actually work
-        while self.update():
+        # wait until new NMEA received from GPS
+        device_updated: bool = self.update()
+        while not self.update():
             device_updated = True #Performs as many GPS updates as there are NMEA strings available in UART
 
         if (DEBUG["FAKE_DATA"]):
@@ -60,8 +61,8 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
         gc.collect()
 
         # If NMEA received back
-        if self.fix_quality == 4: # or self.fix_quality == 5:
-            logger.info("GPS has a high quality fix!")
+        if self.fix_quality == 4:
+            logger.info("GPS fix")
             gc.collect()
             print("Point 6 Available memory: {} bytes".format(gc.mem_free()))
             return device_updated
