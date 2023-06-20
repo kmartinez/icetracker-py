@@ -121,7 +121,7 @@ async def rover_loop():
                         int(GPS_DEVICE.satellites),
                         TMP_117.get_temperature(),
                         BAT_VOLTS.battery_voltage(BAT_V),
-                        tuple(ADXL_343.get_tilts(xoff=xoff, yoff=yoff))
+                        tuple(ADXL_343.get_tilts(xoff=ACC_X_OFF, yoff=ACC_Y_OFF))
                         )
                     
                     with open("/sd/data_entries/" + gps_data.timestamp.isoformat().replace(":", "_"), "w") as file:
