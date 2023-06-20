@@ -8,6 +8,7 @@ DEVICE_ID = 18
 # accel offsets (find manually and enter here)
 ACC_X_OFF = 0
 ACC_Y_OFF = 0
+ANT_OFFSET = 0
 # SET FOR BASE STATION ONLY
 ROVER_COUNT = 1
 
