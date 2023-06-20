@@ -2,7 +2,14 @@ import adafruit_logging as logging
 import board
 from busio import UART, SPI, I2C
 from digitalio import DigitalInOut
-# from Drivers.I2C_Devices import *
+
+DEVICE_ID = 18
+'''ID of this device'''
+# accel offsets (find manually and enter here)
+ACC_X_OFF = 0
+ACC_Y_OFF = 0
+# SET FOR BASE STATION ONLY
+ROVER_COUNT = 1
 
 """PIN Definitions"""
 # I2C = board.I2C()
@@ -11,23 +18,13 @@ ADMIN_IO = DigitalInOut(board.A2)
 '''Main Admin IO Pin'''
 GPS_EN = DigitalInOut(board.D4)
 GPS_EN.switch_to_output(value=False)
-'''ENALBE GPS'''
+'''ENABLE GPS'''
 BATV_EN = DigitalInOut(board.A1)
 BATV_EN.switch_to_output(value=False)
 '''ENABLE BATV INPUT'''
 
-
 GLOBAL_FAILSAFE_TIMEOUT = 120
 '''If this amount of seconds passes program should abort and base should send whatever it has'''
-TIME_BETWEEN_WAKEUP = 180
-'''Amount of seconds RTC should wait before setting off the alarm again (waking up the system in the process)'''
-DEVICE_ID = 18
-'''ID of this device (Will become base station if is 0)'''
-ROVER_COUNT = 1
-
-# accel offsets (find manually and enter here)
-ACC_X_OFF = 0
-ACC_Y_OFF = 0
 
 DEBUG =  {
     "FAKE_DATA": False, #Ignores actual GPS data and just uses fake static data instead
