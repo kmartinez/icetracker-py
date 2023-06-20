@@ -16,14 +16,9 @@ import adafruit_logging as logging
 import time
 from time import sleep
 import asyncio
-# from spi_sd import *
 import gc
-from microcontroller import reset
+import microcontroller
 
-# mount_SD()
-# from Drivers.DGPS import GPS_DEVICE
-# from Drivers.RTC import RTC_DEVICE
-# from Drivers.TMP117 import TMP_117
 
 from Drivers.BATV import * 
 from Drivers.PSU import *
@@ -49,10 +44,7 @@ accurate_reading_saved: bool = False
 sent_data_start_pos: int = 999999999
 
 def truncate_degrees(longitude, latitude):
-    # lat = GPS_SAMPLES["lats"]
-    # lon = GPS_SAMPLES["longs"]
-    
-
+    #TODO: scale size can be adjusted - function could be redundant. 
     lat = latitude.split(".")[0] + "." + latitude.split(".")[1][:7]
     lon = longitude.split(".")[0] + "." + longitude .split(".")[1][:7]
 
@@ -80,22 +72,28 @@ async def rover_loop():
     gc.collect()
     print("Point 3 Available memory: {} bytes".format(gc.mem_free()))
     while True:
+        logger.info("Waiting for a radio packet")
+        # watchdog.feed()
         try:
-            logger.info("Waiting for a radio packet")
             packet = await radio.receive_packet()
         except radio.ChecksumError:
+        # try:
+        #     logger.info("Waiting for a radio packet")
+        #     packet = await radio.receive_packet()
+        # except radio.ChecksumError:
             continue
         # If incoming message is tagged as RTCM3
         if packet.type == PacketType.RTCM3 and not accurate_reading_saved:
-            logger.info("receiving RTCM3")
+            logger.info("receiving rtcm3")
             GPS_DEVICE.rtk_calibrate(packet.payload)
             gc.collect()
             print("Point 4 Available memory: {} bytes".format(gc.mem_free()))
             if GPS_DEVICE.update_with_all_available():
+                print("In here")
                 GPS_SAMPLES["lats"].append(GPS_DEVICE.latitude)
                 GPS_SAMPLES["longs"].append(GPS_DEVICE.longitude)
 
-                #no do standard dev on 1 sample pls
+                # Standard deviation for at least 5 samples
                 if (len(GPS_SAMPLES["longs"].circularBuffer) < AVERAGING_SAMPLE_SIZE): continue
                 
                 debug_variance = util.var(GPS_SAMPLES["longs"].circularBuffer)
@@ -103,23 +101,19 @@ async def rover_loop():
 
                 if util.var(GPS_SAMPLES["longs"].circularBuffer) < VAR_MAX and util.var(GPS_SAMPLES["lats"].circularBuffer) < VAR_MAX:
                     logger.info("Fix obtained: writing to file")
-                    #TODO: Temporary fix for RTC timing data to be able to send packets across to the base.???
-                    #Enabling Battery Voltage Pin to read Bat Vol?? why not just read it
+                    #TODO: Temporary fix for RTC timing data to be able to send packets across to the base.
+                    #Enabling Battery Voltage Pin to read Bat Vol
                     enable_BATV()
                     sleep(2)
                     
+                    #TODO: only confirm this if using reliable GPS data, otherwise, datetime lags behind
                     RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
                     print(RTC_DEVICE.datetime)
-                    #TODO: Find a dynamic way to calibrate without require an human input - to be flat x and y need to be in the range of -0.5 and 0.5
-                    # DELETE this and get static values from config file later
+                    #TODO: Get Static values from config file
                     xoff, yoff = ADXL_343.calib_accel()
-                    # lat = str(util.mean(GPS_SAMPLES["lats"].circularBuffer)).split[0] + "." + str(util.mean(GPS_SAMPLES["lats"].circularBuffer)).split[1][:7]
                     gps_data = GPSData(
                         datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc)),
-                        # datetime.fromtimestamp(time.mktime(RTC_DEVICE.datetime)),
                         util.mean(GPS_SAMPLES["lats"].circularBuffer),
-                        # str(util.mean(GPS_SAMPLES["lats"].circularBuffer)).split[0] + "." + str(util.mean(GPS_SAMPLES["lats"].circularBuffer)).split[1][:7],
-                        # str(util.mean(GPS_SAMPLES["longs"].circularBuffer)).split[0] + "." + str(util.mean(GPS_SAMPLES["longs"].circularBuffer)).split[1][:7],
                         util.mean(GPS_SAMPLES["longs"].circularBuffer),
                         GPS_DEVICE.altitude_m,
                         GPS_DEVICE.fix_quality,
@@ -129,18 +123,18 @@ async def rover_loop():
                         BAT_VOLTS.battery_voltage(BAT_V),
                         tuple(ADXL_343.get_tilts(xoff=xoff, yoff=yoff))
                         )
-                    #TODO: Need to update code to support SPI_SD chip ???
+                    
                     with open("/sd/data_entries/" + gps_data.timestamp.isoformat().replace(":", "_"), "w") as file:
                         file.write(gps_data.to_json() + "\n")
-                    logger.info("File write complete!")
+                    logger.info("File write complete")
                     accurate_reading_saved = True
 
                     gc.collect()
                     print("Point 7 Available memory: {} bytes".format(gc.mem_free()))
         elif packet.type == PacketType.RTCM3:
             #RTCM3 received and we have collected our data for this session
-            #Send the data point to base
-            #If there aren't any, delete??? THIS IS WIERD
+            #Send the oldest data point we have
+            #If there aren't any, delete
             logger.info("got RTCM and accurate reading")
             remaining_paths = os.listdir("/sd/data_entries/")
             if (len(remaining_paths) > 0):
@@ -160,27 +154,25 @@ async def rover_loop():
                 os.remove("/sd/data_entries/" + os.listdir("/sd/data_entries/")[0])
             
         elif packet.type == PacketType.FIN and struct.unpack(FormatStrings.PACKET_DEVICE_ID, packet.payload)[0] == DEVICE_ID:
-            logger.info("Base said OK to shutdown")
+            logger.info("Base said OK to shutdown!")
             gc.collect()
             print("Point 8 Available memory: {} bytes".format(gc.mem_free()))
-            # GPS_EN.value = False
+            # TODO: I2C Buffer prevents proper shutdown when disabling GPS, need a workaround for this.
+            # GPS_EN.value = False 
             # shutdown()
             break
     logger.info("ROVER COMPLETED: SHUTTING DOWN.")
-    shutdown()
+    
 
 if __name__ == "__main__":
-    # try:
-    gc.collect()
-    print("Point 2 Available memory: {} bytes".format(gc.mem_free()))
-    asyncio.run(asyncio.wait_for_ms(asyncio.gather(rover_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
-    shutdown()
-    # except BaseException:
-    # #     print("Device ran out of memory. Resetting.")
-    # #     reset()
-    #     # PSU.shutdown()
-    #     if RTC_DEVICE.alarm1_status:
-    #         shutdown()
-    #     else:
-    #         # reset()
-    #         supervisor.reload()
+    try:
+        gc.collect()
+        print("Point 2 Available memory: {} bytes".format(gc.mem_free()))
+        # asyncio.run(asyncio.wait_for_ms(asyncio.gather(rover_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
+        asyncio.run(asyncio.wait_for_ms(asyncio.gather(rover_loop()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
+        # shutdown()
+    except MemoryError:
+        logger.critical("Out of Memory - Resetting Device.")
+        microcontroller.reset()
+    finally:
+        shutdown()
