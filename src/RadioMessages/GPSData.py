@@ -11,8 +11,6 @@ class GPSData:
     latitude: str
     longitude: str
     altitude: float
-    quality: int
-    hdop: float
     sats: int
     temp: float
     batv: float
@@ -24,8 +22,6 @@ class GPSData:
         latitude: DecimalNumber,
         longitude: DecimalNumber,
         altitude: float,
-        quality: int,
-        hdop: float,
         sats: int,
         temp: float,
         batv: float,
@@ -35,8 +31,6 @@ class GPSData:
         self.latitude = str(latitude)
         self.longitude = str(longitude)
         self.altitude = altitude
-        self.quality = quality
-        self.hdop = hdop
         self.sats = sats
         self.temp = temp
         self.batv = batv
@@ -53,8 +47,6 @@ class GPSData:
             "latitude": self.latitude,
             "longitude": self.longitude,
             "altitude": self.altitude,
-            "quality": self.quality,
-            "hdop": self.hdop,
             "sats": self.sats,
             "temp": self.temp,
             "batv": self.batv,

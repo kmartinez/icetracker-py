@@ -69,8 +69,6 @@ if __name__ == "__main__":
     logger.info("Network Connected!")
 
 
-# logger.info(f"My Local IP address is: {fona.local_ip}")
-
 # Initialize a requests object with a socket and cellular interface
     requests.set_socket(cellular_socket, fona)
     # except UnicodeError:
