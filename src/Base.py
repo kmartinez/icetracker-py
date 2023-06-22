@@ -6,11 +6,12 @@ from Drivers.PSU import * #EVERYTHING FROM THIS IS READONLY (you can use write f
 from config import *
 from Drivers.RTC import *
 from RadioMessages.GPSData import *
-from Drivers.I2C_Devices import GPS_DEVICE, RTC_DEVICE
+from Drivers.I2C_Devices import GPS_DEVICE, RTC_DEVICE, TMP_117
+from Drivers.BATV import *
 import Drivers.Radio as radio
 from Drivers.Radio import PacketType
-
-
+import time
+from adafruit_datetime import datetime
 import gc
 print(gc.mem_free())
 gc.enable()
@@ -96,10 +97,22 @@ async def rover_data_loop():
                 logger.warning("Empty GPS data received")
                 continue
             data = GPSData.from_json(packet.payload.decode('utf-8'))
+            print(data)
+            enable_BATV()
+            time.sleep(0.5)
+            GPS_DEVICE.update()
+
+            base_data = GPSData(
+                DEVICE_ID,
+            # datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc)).isoformat(), # for GPS timing data
+                datetime.fromtimestamp(time.mktime(RTC_DEVICE.datetime)),
+                TMP_117.get_temperature(),
+                BAT_VOLTS.battery_voltage(BAT_V),
+                json.loads(json.dumps(data)))
             with open("/sd/data_entries/" + str(packet.sender) + "-" + data["timestamp"].replace(":", "_"), "w") as file:
                 data['rover_id'] = packet.sender
                 logger.debug(f"WRITING_DATA_TO_FILE: {data}")
-                file.write(json.dumps(data) + '\n')
+                file.write(base_data.to_json() + '\n')
             
             radio.send_response(PacketType.ACK, packet.sender)
 
@@ -124,8 +137,8 @@ if __name__ == "__main__":
 
     try:
         logger.info("Starting async tasks")
-        loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(rover_data_loop(), rtcm3_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
-        # loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(rover_data_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
+        # loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(rover_data_loop(), rtcm3_loop(), clock_calibrator(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
+        loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(rover_data_loop(), rtcm3_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000)) # for indoor testing
         logger.info("Async tasks have finished running")
     except asyncio.TimeoutError:
         logger.warning("Async tasks timed out! Continuing with any remaining data")

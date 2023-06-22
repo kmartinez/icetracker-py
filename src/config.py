@@ -20,7 +20,7 @@ COMMS_EN.switch_to_output(value=False)
 '''ENABLE LR COMMS - BASE ONLY'''
 GPS_EN = DigitalInOut(board.D4)
 GPS_EN.switch_to_output(value=False)
-'''ENALBE GPS'''
+'''ENABLE GPS'''
 BATV_EN = DigitalInOut(board.A1)
 BATV_EN.switch_to_output(value=False)
 '''ENABLE BATV INPUT'''
