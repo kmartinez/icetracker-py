@@ -26,15 +26,6 @@ logger = logging.getLogger("BASE")
 finished_rovers: dict[int, bool] = {}
 
 if __name__ == "__main__":
-    # loop = asyncio.new_event_loop()
-    #Base needs to:
-    #Get RTCM3 correction.
-    #Send RTCM3 data
-    #Receive packet
-    #If GPS data received:
-    # If rover not already received, store GPS data.
-    # Send ACK to rover
-    #end
         
     logger.info("DISABLING GPS")
     # GPS_EN.value = False
@@ -75,41 +66,38 @@ if __name__ == "__main__":
     #     logger.critical("FONA needs to be power cycled. Incorrect AT commands received.")
 
     #TODO: add checker to make sure that the contents are > 0
-    http_payload = []
-    data_paths = os.listdir("/sd/data_entries/")[-1:]
+    http_payload = [ None ]
+    data_paths = os.listdir("/sd/data_entries/")
     if len(data_paths) > 0:
         for path in data_paths:
             with open("/sd/data_entries/" + path, "r") as file:
                 try:
-                    http_payload.append(json.loads(file.readline()))
+                    # http_payload.append(json.loads(file.readline()))
+                    http_payload[0] = json.loads(file.readline())
                 except:
                     logger.warning(f"Invalid saved data found at /data_entries/{path}")
-                    #os.remove("/data_entries/" + path) #This could be dangerous - DON'T DO!
                 #TODO: RAM limit
-        logger.debug(f"HTTP_PAYLOAD: {http_payload}")
+            # logger.debug(f"HTTP_PAYLOAD: {http_payload}")
+                print(http_payload)
+            # try:
+                logger.info("Sending HTTP request!")
+                # response = requests.post("http://iotgate.ecs.soton.ac.uk/glacsweb/api/ingest", json=http_payload)
+                response = requests.post("http://iotgate.ecs.soton.ac.uk/myapp", json=http_payload)
+                logger.info(f"STATUS CODE: {response.status_code}, REASON: {response.reason}")
+                #requests.post("http://google.com/glacsweb/api/ingest", json=http_payload)
+                #TODO: check if response OK
+
+                # If data ingested correcttly, move files sent from /data_entries/ to /sent_data/
+                if str(response.status_code) == "200":
+                    paths_sent = os.listdir("/sd/data_entries/")
+                    # for path in paths_sent:
+                    os.rename("/sd/data_entries/" + path, "/sd/sent_data/" + path)
+                    logger.info("HTTP request successful - Removing sent data")
+                else:
+                    logger.warning(f"STATUS CODE: {response.status_code}, REASON: {response.reason}")
+            # finally:
+        print("Turning Off...")
+        shutdown()
     else:
         logger.warning("No Stored data on system. Turning off.")
-        shutdown()
-
-    try:
-        logger.info("Sending HTTP request!")
-        # response = requests.post("http://iotgate.ecs.soton.ac.uk/glacsweb/api/ingest", json=http_payload)
-        response = requests.post("http://iotgate.ecs.soton.ac.uk/myapp", json=http_payload)
-        logger.info(f"STATUS CODE: {response.status_code}, REASON: {response.reason}")
-        #requests.post("http://google.com/glacsweb/api/ingest", json=http_payload)
-        #TODO: check if response OK
-
-        # If data ingested correcttly, move files sent from /data_entries/ to /sent_data/
-        if str(response.status_code) == "200":
-            paths_sent = os.listdir("/sd/data_entries/")[-1:]
-            for path in paths_sent:
-                os.rename("/sd/data_entries/" + path, "/sd/sent_data/" + path)
-            logger.info("HTTP request successful! Removing all sent data")
-        else:
-            logger.warning(f"STATUS CODE: {response.status_code}, REASON: {response.reason}")
-    finally:
-        # import microcontroller
-        
-        print("Turning Off...")
-        # microcontroller.
         shutdown()
