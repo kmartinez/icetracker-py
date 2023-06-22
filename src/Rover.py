@@ -116,8 +116,6 @@ async def rover_loop():
                         util.mean(GPS_SAMPLES["lats"].circularBuffer),
                         util.mean(GPS_SAMPLES["longs"].circularBuffer),
                         GPS_DEVICE.altitude_m,
-                        GPS_DEVICE.fix_quality,
-                        float(GPS_DEVICE.horizontal_dilution),
                         int(GPS_DEVICE.satellites),
                         TMP_117.get_temperature(),
                         BAT_VOLTS.battery_voltage(BAT_V),
