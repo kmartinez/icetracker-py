@@ -4,25 +4,14 @@ Creates a scheduler and adds all base station tasks to it
 
 
 from adafruit_fona.adafruit_fona import FONA
-# from adafruit_fona.fona_3g import FONA3G
 import adafruit_fona.adafruit_fona_network as network
 import adafruit_fona.adafruit_fona_socket as cellular_socket
 from Drivers.SPI_SD import *
 import time
 from Drivers.PSU import * #EVERYTHING FROM THIS IS READONLY (you can use write functions, but cannot actually modify a variable)
-# from Drivers.I2C_Devices import shutdown
-# import Drivers.Radio as radio
-# from Drivers.Radio import PacketType
 from config import *
-# from RadioMessages.GPSData import *
-# from Drivers.DGPS import GPS_DEVICE
-# import Drivers.Radio as radio
-# from Drivers.Radio import PacketType
 import json
-
 import adafruit_requests as requests
-
-
 import asyncio
 import struct
 import os
@@ -32,8 +21,6 @@ import adafruit_logging as logging
 
 logger = logging.getLogger("BASE")
 
-# GSM_UART: busio.UART = busio.UART(board.A5, board.D6, baudrate=9600)
-# gsm_rst = digitalio.DigitalInOut(board.D4)
 
 #this is a global variable so i can still get the data even if the rover loop times out
 finished_rovers: dict[int, bool] = {}
@@ -52,18 +39,12 @@ if __name__ == "__main__":
     logger.info("DISABLING GPS")
     # GPS_EN.value = False
 
-
-    
-
     if not DEBUG["WATCHDOG_DISABLE"]:
         watchdog.timeout = 16
         watchdog.mode = WatchDogMode.RESET
         watchdog.feed()
 
      # - enable_fona now exists in the adafruit_library
-    # time.sleep(5)
-    # enable_fona()
-    # time.sleep(10)
     # try:
     logger.info("ENABLING GSM COMMS")
 
@@ -108,6 +89,9 @@ if __name__ == "__main__":
                     #os.remove("/data_entries/" + path) #This could be dangerous - DON'T DO!
                 #TODO: RAM limit
         logger.debug(f"HTTP_PAYLOAD: {http_payload}")
+    else:
+        logger.warning("No Stored data on system. Turning off.")
+        shutdown()
 
     try:
         logger.info("Sending HTTP request!")
