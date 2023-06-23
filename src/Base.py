@@ -68,21 +68,6 @@ async def clock_calibrator():
             pass
         RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
 
-# Untested
-# def clock_calibrator():
-#     """Task that runs a flag to check if RTC timestamp has deviated and needs to be calibrated with GPS time."""
-#     rtc_calibrated = False
-#     while GPS_DEVICE.timestamp_utc == None:
-#             while not GPS_DEVICE.update():
-#                 pass
-    
-#     while not rtc_calibrated:
-#         if RTC_DEVICE.datetime != GPS_DEVICE.timestamp_utc:
-#             RTC_DEVICE.datetime = GPS_DEVICE
-#             rtc_calibrated = True
-        
-
-
 async def feed_watchdog():
     """Upon being executed by a scheduler, this task will feed the watchdog then yield.
     Added as a task to the asyncio scheduler by this module's main code.
@@ -161,12 +146,13 @@ if __name__ == "__main__":
 
     try:
         logger.info("Starting async tasks")
-        # loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(rover_data_loop(), rtcm3_loop(), clock_calibrator(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
-        loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(rover_data_loop(), rtcm3_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000)) # for indoor testing
+        loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(rover_data_loop(), rtcm3_loop(), clock_calibrator(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
+        #use this for indoor tests
+        #loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(rover_data_loop(), rtcm3_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000)) # for indoor testing
         logger.info("Async tasks have finished running")
     except asyncio.TimeoutError:
-        logger.warning("Async tasks timed out! Continuing with any remaining data")
-        pass #Don't care, we have data, just send what we got
+        logger.warning("Async tasks timed out")
+        pass #Don't care
     except MemoryError:
         if RTC_DEVICE.alarm1_status:
             shutdown()
