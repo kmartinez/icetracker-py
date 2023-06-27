@@ -1,6 +1,4 @@
-"""Contains code to extend the RTC module functionality
-"""
-
+from config import *
 import board
 import busio
 import adafruit_ds3231
@@ -32,8 +30,8 @@ class RTC(adafruit_ds3231.DS3231):
         alarm_time = struct_time(alarm_time_tuple)
         return mktime(alarm_time) > mktime(self.datetime)
 
-I2C: busio.I2C = board.I2C()
-'''I2C bus (for RTC module)'''
+# I2C: busio.I2C = board.I2C()
+# '''I2C bus (for RTC module)'''
 
-RTC_DEVICE: RTC = RTC(I2C)
-'''RTC timer'''
+# RTC_DEVICE: RTC = RTC(I2C)
+# '''RTC timer'''

@@ -1,9 +1,8 @@
-"""Executed before main module by CircuitPython.
-Configures on-board storage for read/write capabilities
+"""
+Config on-board storage for r/w
 """
 
 import board, digitalio, storage
-
 
 switch = digitalio.DigitalInOut(board.A4)
 switch.direction = digitalio.Direction.INPUT
