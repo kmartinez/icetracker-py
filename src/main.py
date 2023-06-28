@@ -15,10 +15,10 @@ logger = logging.getLogger("MAIN_FILE")
 rtc.set_time_source(RTC_DEVICE)
 
 
-COMMS_TIME = [0, 3, 6, 9, 12, 15, 18, 21] #Final version should be 12
+COMMS_TIME = [13] #Final version should be 13 or 14
 
 WAKE_UP_WINDOW_HRS  = [0, 3, 6, 9, 12, 15, 18, 21] 
-WAKE_UP_WINDOW_MINS = [0, 20, 40]
+WAKE_UP_WINDOW_MINS = [0]
 # WAKE_UP_WINDOW_MINS = [0,5,10,15,20,25,30,35,40,45,50,55]
 # WAKE_UP_WINDOW_MINS = [0,3,6,9,12,15,18,21,24,27,30,33,36,39,42,45,48,51,54,57]
 
@@ -58,25 +58,6 @@ def get_next_alarm_min(mm):
         if nexttime == None:
             nexttime = 0
     return nexttime
-
-# def get_next_alarm_min(mm, hh):
-#     nexttime = None
-#     hour = hh
-#     if ( mm in WAKE_UP_WINDOW_MINS):
-#             position = WAKE_UP_WINDOW_MINS.index(mm)
-#             # next_position = position + 1
-#             if (next_position > (len(WAKE_UP_WINDOW_MINS)-1)):
-#                 next_position = 0
-#             nexttime = WAKE_UP_WINDOW_MINS[next_position]
-#             hour = hh + 1
-#     else:
-#         for i in WAKE_UP_WINDOW_MINS:
-#             if( i > mm):
-#                 nexttime = i
-#                 break
-#         if nexttime == None:
-#             nexttime = 0
-#     return nexttime, hour
 
 
 
