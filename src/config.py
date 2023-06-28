@@ -30,7 +30,7 @@ GLOBAL_FAILSAFE_TIMEOUT = 180
 
 DEBUG =  {
     "FAKE_DATA": False, #Ignores actual GPS data and just uses fake static data instead
-    "WATCHDOG_DISABLE": True #Disables watchdog resets so you can debug things
+    "WATCHDOG_DISABLE": False #Disables watchdog resets so you can debug things
 }
 
 logging.getLogger("BASE").setLevel(logging.INFO)

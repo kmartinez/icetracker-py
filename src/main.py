@@ -15,9 +15,9 @@ logger = logging.getLogger("MAIN_FILE")
 rtc.set_time_source(RTC_DEVICE)
 
 
-COMMS_TIME = [0, 3, 6, 9, 12, 15, 18, 21] #Final version should be 12
+COMMS_TIME = [13] #Final version should be 12
 
-WAKE_UP_WINDOW_HRS  = [0, 3, 6, 9, 12, 15, 18, 21] 
+WAKE_UP_WINDOW_HRS  = [0, 3, 6, 9, 12, 13, 15, 18, 21] 
 WAKE_UP_WINDOW_MINS = [0, 20, 40]
 # WAKE_UP_WINDOW_MINS = [0,5,10,15,20,25,30,35,40,45,50,55]
 # WAKE_UP_WINDOW_MINS = [0,3,6,9,12,15,18,21,24,27,30,33,36,39,42,45,48,51,54,57]

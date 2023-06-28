@@ -15,18 +15,13 @@ import supervisor
 logger = logging.getLogger("MAIN_FILE")
 rtc.set_time_source(RTC_DEVICE)
 
-TIME_INTERVAL = 20
-WAKEUP_INTERVAL = 10
-RTC_TIMEOUT = 90
-
 
 WAKE_UP_WINDOW_HRS  = [0, 3, 6, 9, 12, 15, 18, 21] 
-# WAKE_UP_WINDOW_MINS = [0,5,10,15,20,25,30,35,40,45,50,55]
 WAKE_UP_WINDOW_MINS = [0, 20, 40]
-# WAKE_UP_WINDOW_MINS = [0,3,6,9,12,15,18,21,24,27,30,33,36,39,42,45,48,51,54,57]
+
 
 def get_next_alarm_hour(hh):
-    nexttime = None
+    nexttime = Nonex
 
     if ( hh in WAKE_UP_WINDOW_HRS):
             position = WAKE_UP_WINDOW_HRS.index(hh)
@@ -91,18 +86,18 @@ if __name__ == "__main__":
 
     logger.info("Current Time")
     print(RTC_DEVICE.datetime)
-    # (YY, MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
-    # nextwake_MM = get_next_alarm_min(mm)
-    # nextwake_HH = get_next_alarm_hour(hh)
-    # logger.info("NEXT WAKEUP TIME (Hour) {}".format(nextwake_HH))
-    # # changed daily into monthly - should it be running at hourly??
-    # RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,nextwake_HH,0,0,wday,yday,dst]), "daily")
-
     (YY, MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
-    nextwake_MM=  get_next_alarm_min(mm)
-    print(nextwake_MM)
-    #   print(hour)
-    logger.info("NEXT WAKEUP TIME (Minutes) {}".format(nextwake_MM))
+    # nextwake_MM = get_next_alarm_min(mm)
+    nextwake_HH = get_next_alarm_hour(hh)
+    logger.info("NEXT WAKEUP TIME (Hour) {}".format(nextwake_HH))
+    # changed daily into monthly - should it be running at hourly??
+    RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,nextwake_HH,0,0,wday,yday,dst]), "daily")
+
+    # (YY, MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
+    # nextwake_MM=  get_next_alarm_min(mm)
+    # print(nextwake_MM)
+    # #   print(hour)
+    # logger.info("NEXT WAKEUP TIME (Minutes) {}".format(nextwake_MM))
     # RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,hh,nextwake_MM,0,wday,yday,dst]), "hourly")
     print(RTC_DEVICE.alarm1)
 
@@ -117,18 +112,17 @@ if __name__ == "__main__":
             shutdown()
         else:
 
+            (YY, MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
+            nextwake_HH = get_next_alarm_hour(hh)
+            logger.info("NEXT WAKEUP TIME (Hour) {}".format(nextwake_HH))
+            # changed daily into monthly - should it be running at hourly??
+            RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,nextwake_HH,0,0,wday,yday,dst]), "daily")
+
+
             # (YY, MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
             # nextwake_MM = get_next_alarm_min(mm)
-            # nextwake_HH = get_next_alarm_hour(hh)
-            # logger.info("NEXT WAKEUP TIME (Hour) {}".format(nextwake_HH))
-            # # changed daily into monthly - should it be running at hourly??
-            # RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,nextwake_HH,0,0,wday,yday,dst]), "daily")
-
-
-            (YY, MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
-            nextwake_MM = get_next_alarm_min(mm)
-            logger.info("NEXT WAKEUP TIME (Minutes) {}".format(nextwake_MM))
-            RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,hh,nextwake_MM,0,wday,yday,dst]), "hourly")
+            # logger.info("NEXT WAKEUP TIME (Minutes) {}".format(nextwake_MM))
+            # RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,hh,nextwake_MM,0,wday,yday,dst]), "hourly")
             print(RTC_DEVICE.alarm1)
         RTC_DEVICE.alarm1_interrupt = True
 
