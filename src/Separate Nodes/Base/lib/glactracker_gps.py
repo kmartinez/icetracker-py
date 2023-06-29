@@ -711,8 +711,8 @@ class GPS_GtopI2C(GPS):
                 i2c.readinto(self._charbuff)
                 char = self._charbuff[0]
                 # print(char)
-                # if ((char == 0x0A) or (char == 0xff))   and (self._lastbyte != 0x0D): # or (char == 0xff): #skip with 0xff
-                if (char == 0x0A) and (self._lastbyte != 0x0D):
+                if ((char == 0x0A) or (char == 0xff))   and (self._lastbyte != 0x0D): # or (char == 0xff): #skip with 0xff
+                # if (char == 0x0A) and (self._lastbyte != 0x0D):
                     # if (char == 0xff):
                     continue  # skip duplicate \n's!
                 result.append(char)

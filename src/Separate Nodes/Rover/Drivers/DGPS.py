@@ -43,8 +43,8 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
         device_updated: bool = self.update() #Potentially garbage line so we continue anyway even if it doesn't actually work
         # normally using 'not' self.update() to be able to read New incoming nmea sentences.
         # wait until new NMEA received from GPS
-        # while not self.update(): - to be used for outdoors sim
-        while self.update():
+        # while self.update():
+        while not self.update(): #- to be used for outdoors sim
             print(device_updated)
             device_updated = True #Performs as many GPS updates as there are NMEA strings available in UART
         
