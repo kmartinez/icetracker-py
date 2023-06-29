@@ -17,7 +17,7 @@ rtc.set_time_source(RTC_DEVICE)
 
 COMMS_TIME = [13] #Final version should be 13 or 14
 
-WAKE_UP_WINDOW_HRS  = [0, 3, 6, 9, 12, 15, 18, 21] 
+WAKE_UP_WINDOW_HRS  = [0, 3, 6, 9, 12, 13, 15, 18, 21] 
 WAKE_UP_WINDOW_MINS = [0]
 # WAKE_UP_WINDOW_MINS = [0,5,10,15,20,25,30,35,40,45,50,55]
 # WAKE_UP_WINDOW_MINS = [0,3,6,9,12,15,18,21,24,27,30,33,36,39,42,45,48,51,54,57]
@@ -72,7 +72,6 @@ if __name__ == "__main__":
     (YY, MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
     nextwake_HH = get_next_alarm_hour(hh)
     logger.info("NEXT WAKEUP TIME (Hour) {}".format(nextwake_HH))
-    # changed daily into monthly - should it be running at hourly??
     RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,nextwake_HH,0,0,wday,yday,dst]), "daily")
 
     # (YY, MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
@@ -97,7 +96,6 @@ if __name__ == "__main__":
             (YY, MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
             nextwake_HH = get_next_alarm_hour(hh)
             logger.info("NEXT WAKEUP TIME (Hour) {}".format(nextwake_HH))
-            # changed daily into monthly - should it be running at hourly??
             RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,nextwake_HH,0,0,wday,yday,dst]), "daily")
 
 
@@ -108,11 +106,6 @@ if __name__ == "__main__":
             print(RTC_DEVICE.alarm1)
         RTC_DEVICE.alarm1_interrupt = True
 
-      # RTC_DEVICE.alarm1_interrupt = True
-    #   print("I'm here\n")
-    #   if RTC_DEVICE.alarm1_status
-    #   end_time = time.monotonic()
-    #   print(end_time - start_time)
 
     if not DEBUG["WATCHDOG_DISABLE"]:
         watchdog.timeout = 16

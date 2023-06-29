@@ -109,15 +109,11 @@ async def rover_loop():
                     #TODO: only confirm this if using reliable GPS data, otherwise, datetime lags behind
                     RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
                     print(RTC_DEVICE.datetime)
-                    #TODO: Get Static values from config file
-                    # xoff, yoff = ADXL_343.calib_accel()
                     gps_data = GPSData(
                         datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc)),
                         util.mean(GPS_SAMPLES["lats"].circularBuffer),
                         util.mean(GPS_SAMPLES["longs"].circularBuffer),
                         GPS_DEVICE.altitude_m,
-                        GPS_DEVICE.fix_quality,
-                        float(GPS_DEVICE.horizontal_dilution),
                         int(GPS_DEVICE.satellites),
                         TMP_117.get_temperature(),
                         BAT_VOLTS.battery_voltage(BAT_V),

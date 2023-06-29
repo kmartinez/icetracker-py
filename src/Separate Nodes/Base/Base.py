@@ -2,15 +2,10 @@
 Creates a scheduler and adds all base station tasks to it
 """
 
-# from adafruit_fona.adafruit_fona import FONA
-# import adafruit_fona.adafruit_fona_network as network
-# import adafruit_fona.adafruit_fona_socket as cellular_socket
-# import time
 from Drivers.PSU import * #EVERYTHING FROM THIS IS READONLY (you can use write functions, but cannot actually modify a variable)
 from config import *
 from Drivers.RTC import *
 from RadioMessages.GPSData import *
-# from Drivers.DGPS import GPS_DEVICE
 from Drivers.I2C_Devices import GPS_DEVICE, RTC_DEVICE
 import Drivers.Radio as radio
 from Drivers.Radio import PacketType
@@ -35,11 +30,9 @@ logger = logging.getLogger("BASE")
 
 #this is a global variable so i can still get the data even if the rover loop times out
 finished_rovers: dict[int, bool] = {}
-# when to send data
-# COMMS_TIME = [0, 3, 6, 9, 12, 15, 18, 21] 
+
 
 # get current time from GPS or RTC? Probably best to be GPS...
-# datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc))
 
 
 async def clock_calibrator():
@@ -50,20 +43,6 @@ async def clock_calibrator():
         while not GPS_DEVICE.update():
             pass
         RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
-
-# Untested
-# def clock_calibrator():
-#     """Task that runs a flag to check if RTC timestamp has deviated and needs to be calibrated with GPS time."""
-#     rtc_calibrated = False
-#     while GPS_DEVICE.timestamp_utc == None:
-#             while not GPS_DEVICE.update():
-#                 pass
-    
-#     while not rtc_calibrated:
-#         if RTC_DEVICE.datetime != GPS_DEVICE.timestamp_utc:
-#             RTC_DEVICE.datetime = GPS_DEVICE
-#             rtc_calibrated = True
-        
 
 
 async def feed_watchdog():
@@ -145,93 +124,3 @@ if __name__ == "__main__":
             supervisor.reload()
     finally:
         shutdown()
-    #TODO: include a checker for a default COMMS_TIME - reference -> kmartinez/picogps/main.py
-    # if time on the RTC matches that of COMMS_TIME, proceed to the section of the code enabling the FONA
-    # otherwise, turn off.
-
-    # try:
-    # logger.info("Checking current time")
-    # # clock_calibrator updates time on RTC # may need to feed watchdog here...
-    # # use clock calibrator, make sure that watchdog has been fed through it, and then use RTC
-    # '''Can utilise a similar script from clock_calibrator if RTC_DEVICE fails to update'''
-    # # while GPS_DEVICE.timestamp_utc == None:
-    # #     while not GPS_DEVICE.update():
-    # #         pass
-    
-    
-
-    # if RTC_DEVICE.datetime[3] in COMMS_TIME and RTC_DEVICE.datetime[4] < 15:
-    #     logger.info('Device meets Comms Time - \n Enabling GSM.')
-    #     # GPS_EN.value = False
-    #     # try:
-    #     #     from adafruit_fona.adafruit_fona import FONA
-    #     #     # from adafruit_fona.fona_3g import FONA3G
-    #     #     import adafruit_fona.adafruit_fona_network as network
-    #     #     import adafruit_fona.adafruit_fona_socket as cellular_socket
-    #     #     # Temporary Delay needed when cold booting fona to avoid unicode error...
-    #     # except ImportError:
-    #     #     logger.critical("Unable to import files.")
-    #     # enable_fona()
-    #     # time.sleep(5)
-
-    #     fona = FONA(GSM_UART, GSM_RST_PIN, debug=True)
-        
-    #     logger.info("FONA initialized")
-    #     logger.debug(f"FONA VERSION: fona.version")
-
-    #     network = network.CELLULAR(
-    #         fona, (SECRETS["apn"], SECRETS["apn_username"], SECRETS["apn_password"])
-    #     )
-
-    #     while not network.is_attached:
-    #         logger.info("Attaching to network...")
-    #         time.sleep(0.5)
-    #     logger.info("Attached!")
-
-    #     while not network.is_connected:
-    #         logger.info("Connecting to network...")
-    #         network.connect()
-    #         time.sleep(0.5)
-    #     logger.info("Network Connected!")
-        
-    #     gc.collect()
-    #     # Initialize a requests object with a socket and cellular interface
-    #     requests.set_socket(cellular_socket, fona)
-
-    #     http_payload = []
-    #     data_paths = os.listdir("/sd/data_entries/")
-    #     for path in data_paths:
-    #         with open("/sd/data_entries/" + path, "r") as file:
-    #             try:
-    #                 http_payload.append(json.loads(file.readline()))
-    #             except:
-    #                 logger.warning(f"Invalid saved data found at /data_entries/{path}")
-    #                 #os.remove("/data_entries/" + path) #This could be dangerous - DON'T DO!
-    #             #TODO: RAM limit
-    #     logger.debug(f"HTTP_PAYLOAD: {http_payload}")
-
-
-    #     try:
-    #         logger.info("Sending HTTP request!")
-    #         # response = requests.post("http://iotgate.ecs.soton.ac.uk/glacsweb/api/ingest", json=http_payload)
-    #         response = requests.post("http://iotgate.ecs.soton.ac.uk/myapp", json=http_payload)
-    #         logger.info(f"STATUS CODE: {response.status_code}, REASON: {response.reason}")
-    #         #requests.post("http://google.com/glacsweb/api/ingest", json=http_payload)
-    #         #TODO: check if response OK
-
-    #         # If data ingested correcttly, move files sent from /data_entries/ to /sent_data/
-    #         if str(response.status_code) == "200":
-    #             paths_sent = os.listdir("/sd/data_entries/")
-    #             for path in paths_sent:
-    #                 os.rename("/sd/data_entries/" + path, "/sd/sent_data/" + path)
-    #             logger.info("HTTP request successful! Removing all sent data")
-    #         else:
-    #             logger.warning(f"STATUS CODE: {response.status_code}, REASON: {response.reason}")
-    #     finally:
-    #         shutdown()
-    # else:
-    #     logger.warning("Time not met. Logging data and shutting down device.")
-    #     shutdown()
-    # except OSError:
-    #     logger.critical("Unexpected Behaviour Here.")
-    #     shutdown()
