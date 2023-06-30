@@ -9,9 +9,11 @@
 `adafruit_fona`
 ================================================================================
 
-CircuitPython library for the Adafruit FONA cellular module
+CircuitPython library for the Adafruit FONA cellular module.
+Modified for use with FONA MiniGSM. Should still work with other FONA boards but
+YMMV
 
-* Author(s): ladyada, Brent Rubell
+* Author(s): ladyada, Brent Rubell, Michael Jones
 
 Implementation Notes
 --------------------
@@ -25,14 +27,14 @@ Implementation Notes
 import time
 from micropython import const
 from simpleio import map_range
-from Drivers.PSU import *
+from microcontroller import watchdog
+import Drivers.PSU
 
 try:
     from typing import Optional, Tuple, Union
     from circuitpython_typing import ReadableBuffer
     from busio import UART
     from digitalio import DigitalInOut
-
 
     try:
         from typing import Literal
@@ -41,7 +43,7 @@ try:
 except ImportError:
     pass
 
-__version__ = "3.0.1"
+__version__ = "2.1.13"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_FONA.git"
 
 FONA_DEFAULT_TIMEOUT_MS = 500  # TODO: Check this against arduino...
@@ -56,9 +58,8 @@ REPLY_AT = b"AT"
 FONA_MAX_SOCKETS = const(6)
 
 # FONA Versions
-FONA_800_L = const(0x01)
+FONA_800_L = const(0x0)
 FONA_800_H = const(0x6)
-FONA_800_C = const(0x7)
 FONA_808_V1 = const(0x2)
 FONA_808_V2 = const(0x3)
 FONA_3G_A = const(0x4)
@@ -74,7 +75,7 @@ class FONA:
     """CircuitPython FONA module interface.
 
     :param ~busio.UART uart: FONA UART connection.
-    :param ~digitalio.DigitalInOut rst: FONA RST pin.
+    :param ~digitalio.DigitalInOut rdt: FONA RST pin.
     :param ~digitalio.DigitalInOut ri: Optional FONA Ring Interrupt (RI) pin.
     :param bool debug: Enable debugging output.
     """
@@ -87,7 +88,7 @@ class FONA:
         self,
         uart: UART,
         rst: DigitalInOut,
-        ri: Optional[DigitalInOut] = None,  # pylint: disable=invalid-name
+        ri: Optional[DigitalInOut] = None,
         debug: bool = False,
     ) -> None:
         self._buf = b""  # shared buffer
@@ -107,7 +108,8 @@ class FONA:
         """Initializes FONA module."""
         self.reset()
 
-        enable_fona()
+        Drivers.PSU.enable_fona()
+        time.sleep(5)
 
         timeout = 7000
         while timeout > 0:
@@ -152,20 +154,14 @@ class FONA:
             self._fona_type = FONA_3G_A
         elif self._buf.find(b"SIMCOM_SIM5320E") != -1:
             self._fona_type = FONA_3G_E
-        elif self._buf.find(b"SIM800") != -1:
+
+        if self._fona_type == FONA_800_L:
+            # determine if SIM800H
             self._uart_write(b"AT+GMM\r\n")
             self._read_line(multiline=True)
 
             if self._buf.find(b"SIM800H") != -1:
                 self._fona_type = FONA_800_H
-            elif self._buf.find(b"SIM800L") != -1:
-                self._fona_type = FONA_800_L
-            elif self._buf.find(b"SIM800C") != -1:
-                self._fona_type = FONA_800_C
-
-        if self._debug and self._fona_type == 0:
-            print(f"Unsupported module: {self._buf}")
-
         return True
 
     def factory_reset(self) -> bool:
@@ -340,6 +336,7 @@ class FONA:
         status = self._buf
         if not 0 <= self._buf <= 5:
             status = -1
+        self._read_line() #modem sends OK after the status so we need to get rid of that
         return status
 
     @property
@@ -377,7 +374,7 @@ class FONA:
             # Instead just look for a fix and if found assume it's a 3D fix.
             self._get_reply(b"AT+CGNSINF")
 
-            if b"+CGNSINF: " not in self._buf:
+            if not b"+CGNSINF: " in self._buf:
                 return False
 
             status = int(self._buf[10:11].decode("utf-8"))
@@ -425,6 +422,9 @@ class FONA:
     def pretty_ip(  # pylint: disable=no-self-use, invalid-name
         self, ip: ReadableBuffer
     ) -> str:
+        if (self._buf == b"ERROR"):
+            #Manually throw exception because is *is* numbers, it's just not what we want
+            raise ValueError
         """Converts a bytearray IP address to a dotted-quad string for printing"""
         return "%d.%d.%d.%d" % (ip[0], ip[1], ip[2], ip[3])
 
@@ -853,6 +853,7 @@ class FONA:
         if self._debug:
             print("\tUARTWRITE ::", buffer.decode())
         self._uart.write(buffer)
+        watchdog.feed()
 
     def _send_parse_reply(
         self, send_data: bytes, reply_data: bytes, divider: str = ",", idx: int = 0
@@ -952,6 +953,9 @@ class FONA:
 
         if self._debug:
             print("\tUARTREAD ::", self._buf.decode())
+        
+        if self._buf.decode() == '':
+            watchdog.feed()
 
         return reply_idx, self._buf
 
