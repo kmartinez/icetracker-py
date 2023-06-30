@@ -51,7 +51,7 @@ if __name__ == "__main__":
             supervisor.set_next_code_file("./Utility/adminmode.py")
             supervisor.reload()
         if input == "3":
-            exec(open('./Utility/GSM.py').read())
+            import Utility.GSM
     else:
         #Perform failsafe procedures (timeouts, watchdog, etc.)
         if RTC_DEVICE.alarm1_status and RTC_DEVICE.alarm_is_in_future():
@@ -89,9 +89,12 @@ if __name__ == "__main__":
                 logger.info("run rover")
                 exec(open('./Rover.py').read())
     except BaseException as error:
-        logger.critical(traceback.format_exception(type(error), error, error.__traceback__, None, False))
-        with open("/sd/error_log.txt","a") as file:
-            traceback.print_exception(type(error),error,error.__traceback__,None,file,False)
-        #traceback.print_exception(type(error),error,error.__traceback__,None,None,False)
+        if type(error) is KeyboardInterrupt:
+            logger.warning(traceback.format_exception(type(error), error, error.__traceback__, None, False))
+        else:
+            logger.critical(traceback.format_exception(type(error), error, error.__traceback__, None, False))
+            with open("/sd/error_log.txt","a") as file:
+                traceback.print_exception(type(error),error,error.__traceback__,None,file,False)
+            #traceback.print_exception(type(error),error,error.__traceback__,None,None,False)
     finally:
         PSU.shutdown()
