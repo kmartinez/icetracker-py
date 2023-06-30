@@ -35,7 +35,7 @@ DEBUG =  {
 
 LOGGER_NAMES = ["BASE", "DEVICE", "ROVER", "ASYNC_UART", "RADIO", "MAIN_FILE", "GPS"]
 for name in LOGGER_NAMES:
-    logging.getLogger(name).setLevel(logging.WARNING)
+    logging.getLogger(name).setLevel(logging.INFO)
 
 COMMS_TIME = [13] #Final version should be 13 or 14
 WAKE_UP_WINDOW_HRS  = [0, 3, 6, 9, 12, 13, 15, 18, 21]
