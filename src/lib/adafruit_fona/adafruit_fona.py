@@ -853,7 +853,8 @@ class FONA:
         if self._debug:
             print("\tUARTWRITE ::", buffer.decode())
         self._uart.write(buffer)
-        watchdog.feed()
+        if watchdog.mode is not None:
+            watchdog.feed()
 
     def _send_parse_reply(
         self, send_data: bytes, reply_data: bytes, divider: str = ",", idx: int = 0
@@ -954,7 +955,7 @@ class FONA:
         if self._debug:
             print("\tUARTREAD ::", self._buf.decode())
         
-        if self._buf.decode() == '':
+        if self._buf.decode() == ''and watchdog.mode is not None:
             watchdog.feed()
 
         return reply_idx, self._buf
