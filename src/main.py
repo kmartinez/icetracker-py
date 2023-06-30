@@ -38,36 +38,45 @@ def get_next_alarm_time(curr_hr, curr_min):
     return (next_hr, next_min)
 
 if __name__ == "__main__":
+    if ADMIN_IO.value:
+        #Debug mode set, TODO boot menu
+        config.DEBUG["WATCHDOG_DISABLE"] = True
+        config.GLOBAL_FAILSAFE_TIMEOUT = 99999
+        print("""BOOT_MENU:
+        1 - normal boot (no timeouts)
+        2 - admin mode
+        3 - GSM test""")
+        input = input()
+        if input == "2":
+            supervisor.set_next_code_file("./Utility/adminmode.py")
+            supervisor.reload()
+        if input == "3":
+            exec(open('./Utility/GSM.py').read())
+    else:
+        #Perform failsafe procedures (timeouts, watchdog, etc.)
+        if RTC_DEVICE.alarm1_status and RTC_DEVICE.alarm_is_in_future():
+            logger.warning("Alarm is alarming but set to future, presumed abnormal reset")
+            PSU.shutdown()
+
+        (YY,MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
+        logger.info("Current Time: %d:%d", hh, mm)
+        nextwake = get_next_alarm_time(hh, mm)
+
+        logger.info("Next wake time = %d:%d", nextwake[0], nextwake[1])
+        RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,nextwake[0],nextwake[1],0,wday,yday,dst]), "daily")
+        RTC_DEVICE.alarm1_interrupt = True
+
+        if not DEBUG["WATCHDOG_DISABLE"]:
+            watchdog.timeout = 16
+            watchdog.mode = WatchDogMode.RESET
+            watchdog.feed()
+    
     try:
+        #Normal boot procedure
         if "data_entries" not in os.listdir("/sd/"):
             os.mkdir("/sd/data_entries")
         if "sent_data" not in os.listdir("/sd/"):
             os.mkdir("/sd/sent_data")
-
-        if ADMIN_IO.value:
-            #Debug mode set, TODO boot menu
-            config.DEBUG["WATCHDOG_DISABLE"] = True
-            supervisor.set_next_code_file("./Utility/adminmode.py")
-        else:
-            #Perform failsafe procedures (timeouts, watchdog, etc.)
-            if RTC_DEVICE.alarm1_status and RTC_DEVICE.alarm_is_in_future():
-                logger.warning("Alarm is alarming but set to future, presumed abnormal reset")
-                PSU.shutdown()
-
-            (YY,MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
-            logger.info("Current Time: %d:%d", hh, mm)
-            nextwake = get_next_alarm_time(hh, mm)
-
-            logger.info("Next wake time = %d:%d", nextwake[0], nextwake[1])
-            RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,nextwake[0],nextwake[1],0,wday,yday,dst]), "daily")
-            RTC_DEVICE.alarm1_interrupt = True
-
-            if not DEBUG["WATCHDOG_DISABLE"]:
-                watchdog.timeout = 16
-                watchdog.mode = WatchDogMode.RESET
-                watchdog.feed()
-        
-        #Normal boot procedure
         if RTC_DEVICE.datetime[3] in COMMS_TIME and RTC_DEVICE.datetime[4] < 15:
             logger.info('Comms Time')
             exec(open('./Comms.py').read())
