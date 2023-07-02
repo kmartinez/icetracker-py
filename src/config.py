@@ -41,6 +41,8 @@ COMMS_TIME = [13] #Final version should be 13 or 14
 WAKE_UP_WINDOW_HRS  = [0, 3, 6, 9, 12, 13, 15, 18, 21]
 WAKE_UP_WINDOW_MINS = [0]
 
+BASE_ID = 100 #Rover now needs to know this
+
 SECRETS = { #I would put this on its own file untracked by git if you ever put any actual sensitive info here
     "apn": "TM",
     "apn_username": "",

@@ -19,7 +19,7 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
     
     def rtk_calibrate(self, rtcm3_data: bytes):
         logger.debug(f"CALIBRATING_RTCM3_BYTES: {binascii.hexlify(rtcm3_data)}")
-        print(len(binascii.hexlify(rtcm3_data)))
+        #print(len(binascii.hexlify(rtcm3_data)))
         self.rtcm_uart.write(rtcm3_data)
 
     def to_dict(self):
