@@ -28,7 +28,7 @@ finished_rovers: dict[int, bool] = {}
 if __name__ == "__main__":
     logger.info("ENABLING GSM COMMS")
 
-    fona = FONA(GSM_UART, GSM_RST_PIN, debug=True)
+    fona = FONA(GSM_UART, GSM_RST_PIN, debug=False)
     
     logger.info("FONA initialized")
 
@@ -36,14 +36,23 @@ if __name__ == "__main__":
         fona, (SECRETS["apn"], SECRETS["apn_username"], SECRETS["apn_password"])
     )
 
+    MAX_FAIL_COUNT=3
+    failcount = 0
     while not network.is_attached:
+        failcount += 1
+        if failcount > MAX_FAIL_COUNT:
+            raise Exception("FONA could not attach")
         logger.info("Attaching to network...")
         time.sleep(0.5)
     logger.info("Attached!")
 
     logger.info(f"FONA RSSI: {fona.rssi}")
 
+    failcount = 0
     while not network.is_connected:
+        failcount += 1
+        if failcount > MAX_FAIL_COUNT:
+            raise Exception("FONA could not connect")
         logger.info("Connecting to network...")
         network.connect()
         time.sleep(0.5)
