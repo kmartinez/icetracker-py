@@ -28,10 +28,9 @@ finished_rovers: dict[int, bool] = {}
 if __name__ == "__main__":
     logger.info("ENABLING GSM COMMS")
 
-    fona = FONA(GSM_UART, GSM_RST_PIN, debug=False)
+    fona = FONA(GSM_UART, GSM_RST_PIN, debug=True)
     
     logger.info("FONA initialized")
-    logger.debug("FONA VERSION: fona.version")
 
     network = network.CELLULAR(
         fona, (SECRETS["apn"], SECRETS["apn_username"], SECRETS["apn_password"])
@@ -41,6 +40,8 @@ if __name__ == "__main__":
         logger.info("Attaching to network...")
         time.sleep(0.5)
     logger.info("Attached!")
+
+    logger.info(f"FONA RSSI: {fona.rssi}")
 
     while not network.is_connected:
         logger.info("Connecting to network...")
@@ -57,4 +58,4 @@ if __name__ == "__main__":
     TEXT_URL = "http://wifitest.adafruit.com/testwifi/index.html"
     logger.info("My IP address is: %s", fona.local_ip)
     logger.info("IP lookup adafruit.com: %s", fona.get_host_by_name("adafruit.com"))
-    logger.info(requests.get(r = requests.get(TEXT_URL)).text)
+    logger.info(requests.get(TEXT_URL).text)

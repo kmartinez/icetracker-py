@@ -51,7 +51,8 @@ if __name__ == "__main__":
             supervisor.set_next_code_file("./Utility/adminmode.py")
             supervisor.reload()
         if input == "3":
-            import Utility.GSM
+            print("GSM SELECTED")
+            exec(open('./Utility/GSM.py').read())
     else:
         #Perform failsafe procedures (timeouts, watchdog, etc.)
         if RTC_DEVICE.alarm1_status and RTC_DEVICE.alarm_is_in_future():
