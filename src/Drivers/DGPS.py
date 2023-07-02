@@ -38,13 +38,13 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
         logger.info("read GPS")
 
         gc.collect()
-        print("Point 5 Available memory: {} bytes".format(gc.mem_free()))
+        logger.log(5, "Point 5 Available memory: {} bytes".format(gc.mem_free()))
 
         device_updated: bool = self.update() #Potentially garbage line so we continue anyway even if it doesn't actually work
         # normally using 'not' self.update() to be able to read New incoming nmea sentences.
         # wait until new NMEA received from GPS
         while self.update():
-            print(device_updated)
+            #print(device_updated)
             device_updated = True #Performs as many GPS updates as there are NMEA strings available in UART
         
         if (DEBUG["FAKE_DATA"]):
@@ -66,7 +66,7 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
         if self.fix_quality == 4:
             logger.info("GPS fix")
             gc.collect()
-            print("Point 6 Available memory: {} bytes".format(gc.mem_free()))
+            logger.log(5, "Point 6 Available memory: {} bytes".format(gc.mem_free()))
             return device_updated
         else:
             logger.info("GPS quality is currently insufficient")
@@ -81,11 +81,12 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
         # Read UART for newline terminated data - produces bytestr
         logger.info("Retrieving RTCM3 from UART")
         RTCM3_UART.reset_input_buffer()
-        await RTCM3_UART.aysnc_read_RTCM3_packet_forever() #Garbled maybe
-        data = bytearray()
-        for i in range(5):
-            d = await RTCM3_UART.aysnc_read_RTCM3_packet_forever()
-            data += d
+        # await RTCM3_UART.aysnc_read_RTCM3_packet_forever() #Garbled maybe
+        # data = bytearray()
+        # for i in range(5):
+        #     d = await RTCM3_UART.aysnc_read_RTCM3_packet_forever()
+        #     data += d
+        data = await RTCM3_UART.aysnc_read_RTCM3_packet_forever()
         logger.debug(f"RTCM3_BYTES: {binascii.hexlify(bytes(data))}")
         logger.info("RTCM3 obtained from UART")
         return bytes(data)

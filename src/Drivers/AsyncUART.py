@@ -8,6 +8,7 @@ import asyncio
 import binascii
 from config import *
 import adafruit_logging as logging
+import struct
 
 logger = logging.getLogger("ASYNC_UART")
 
@@ -84,9 +85,9 @@ class AsyncUART(busio.UART):
             if len(output) < 1: output = None
         
         if output is None:
-            logger.debug(f"ASYNC_UART_READ_OUTPUT: {output}")
+            logger.log(6, f"ASYNC_UART_READ_OUTPUT: {output}")
         else:
-            logger.debug(f"ASYNC_UART_READ_OUTPUT: {binascii.hexlify(output)}")
+            logger.log(6, f"ASYNC_UART_READ_OUTPUT: {binascii.hexlify(output)}")
         
         return output
 
@@ -103,19 +104,32 @@ class AsyncUART(busio.UART):
         while output[-len(bytes_to_match):] != bytes_to_match:
             output.append(await self.__async_get_byte_forever())
         
-        logger.debug(f"ASYNC_UART_READ_UNTIL_OUTPUT: {binascii.hexlify(bytes(output))}")
+        logger.log(6, f"ASYNC_UART_READ_UNTIL_OUTPUT: {binascii.hexlify(bytes(output))}")
         return bytes(output)
 
     async def aysnc_read_RTCM3_packet_forever(self) -> bytes:
-        """Asynchronously reads an entire RTCM3 packet sequence.
-        There is no end marker for this so we read until the start of the next packet and prepend the packet marker (``b'\\xd3\\x00'``).
-
+        """Asynchronously reads an entire RTCM3 packet.
+        RTCM3 packet is as follows:
+        8 bit preamble (always D3)
+        6 bit reserved
+        10 bit length
+        0-1023 byte message (according to length)
+        3 byte checksum
+        
         :return: RTCM3 bytes
         :rtype: bytes
         """
-        output = await self.async_read_until_forever(b'\xd3\x00')
-        output = b'\xd3\x00' + output[:-2]
+        preamble_raw = await self.async_read_until_forever(b'\xd3')
 
+        len_raw = await self.async_read_forever(2)
+        logger.debug(f"RTCM3_RAW_LEN: {len_raw}")
+        length = int.from_bytes(len_raw, 'big') & 0b0000001111111111 #unpack length as 16-bit integer and mask off reserved
+        logger.debug(f"RTCM3_LENGTH: {length}")
+
+        msg_raw = await self.async_read_forever(length)
+        checksum_raw = await self.async_read_forever(3)
+
+        output = preamble_raw + len_raw + msg_raw + checksum_raw
         logger.debug(f"ASYNC_UART_READ_RTCM3_OUTPUT: {binascii.hexlify(bytes(output))}")
         return bytes(output)
 
@@ -127,5 +141,5 @@ class AsyncUART(busio.UART):
         """
         output = await self.async_read_until_forever(b'\n')
 
-        logger.debug(f"ASYNC_UART_READLINE_OUTPUT: {binascii.hexlify(output)}")
+        logger.log(6, f"ASYNC_UART_READLINE_OUTPUT: {binascii.hexlify(output)}")
         return output
