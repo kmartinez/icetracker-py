@@ -46,7 +46,8 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
         while self.update():
             #print(device_updated)
             device_updated = True #Performs as many GPS updates as there are NMEA strings available in UART
-        
+        if device_updated:
+            logger.debug("GPS_UPDATED")
         if (DEBUG["FAKE_DATA"]):
             #Fake data
             logger.warning("Fake data mode is on! No real GPS data will be used on this device!!!!")
@@ -80,7 +81,7 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
         """
         # Read UART for newline terminated data - produces bytestr
         logger.info("Retrieving RTCM3 from UART")
-        RTCM3_UART.reset_input_buffer()
+        # RTCM3_UART.reset_input_buffer()
         # await RTCM3_UART.aysnc_read_RTCM3_packet_forever() #Garbled maybe
         # data = bytearray()
         # for i in range(5):
