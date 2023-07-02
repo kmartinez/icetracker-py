@@ -1,4 +1,4 @@
-from Drivers.I2C_Devices import GPS_DEVICE, RTC_DEVICE, ADXL_343, TMP_117, shutdown
+from Drivers.I2C_Devices import GPS_DEVICE, RTC_DEVICE, TMP_117
 # import Drivers.PSU as PSU
 import Drivers.Radio as radio
 from Drivers.Radio import PacketType
@@ -70,7 +70,7 @@ async def rover_loop():
     global accurate_reading_saved
     global sent_data_start_pos
     gc.collect()
-    print("Point 3 Available memory: {} bytes".format(gc.mem_free()))
+    logger.debug("Point 3 Available memory: {} bytes".format(gc.mem_free()))
     while True:
         logger.info("Waiting for a radio packet")
         # watchdog.feed()
@@ -87,9 +87,9 @@ async def rover_loop():
             logger.info("receiving rtcm3")
             GPS_DEVICE.rtk_calibrate(packet.payload)
             gc.collect()
-            print("Point 4 Available memory: {} bytes".format(gc.mem_free()))
+            logger.debug("Point 4 Available memory: {} bytes".format(gc.mem_free()))
             if GPS_DEVICE.update_with_all_available():
-                print("In here")
+                logger.debug("In here")
                 GPS_SAMPLES["lats"].append(GPS_DEVICE.latitude)
                 GPS_SAMPLES["longs"].append(GPS_DEVICE.longitude)
 
@@ -108,9 +108,8 @@ async def rover_loop():
                     
                     #TODO: only confirm this if using reliable GPS data, otherwise, datetime lags behind
                     RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
-                    print(RTC_DEVICE.datetime)
                     #TODO: Get Static values from config file
-                    xoff, yoff = ADXL_343.calib_accel()
+                    # xoff, yoff = ADXL_343.calib_accel()
                     gps_data = GPSData(
                         datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc)),
                         util.mean(GPS_SAMPLES["lats"].circularBuffer),
@@ -119,7 +118,7 @@ async def rover_loop():
                         int(GPS_DEVICE.satellites),
                         TMP_117.get_temperature(),
                         BAT_VOLTS.battery_voltage(BAT_V),
-                        tuple(ADXL_343.get_tilts(xoff=ACC_X_OFF, yoff=ACC_Y_OFF))
+                        # tuple(ADXL_343.get_tilts(xoff=ACC_X_OFF, yoff=ACC_Y_OFF))
                         )
                     
                     with open("/sd/data_entries/" + gps_data.timestamp.isoformat().replace(":", "_"), "w") as file:
@@ -128,7 +127,7 @@ async def rover_loop():
                     accurate_reading_saved = True
 
                     gc.collect()
-                    print("Point 7 Available memory: {} bytes".format(gc.mem_free()))
+                    logger.debug("Point 7 Available memory: {} bytes".format(gc.mem_free()))
         elif packet.type == PacketType.RTCM3:
             #RTCM3 received and we have collected our data for this session
             #Send the oldest data point we have
@@ -154,7 +153,7 @@ async def rover_loop():
         elif packet.type == PacketType.FIN and struct.unpack(FormatStrings.PACKET_DEVICE_ID, packet.payload)[0] == DEVICE_ID:
             logger.info("Base said OK to shutdown!")
             gc.collect()
-            print("Point 8 Available memory: {} bytes".format(gc.mem_free()))
+            logger.debug("Point 8 Available memory: {} bytes".format(gc.mem_free()))
             # TODO: I2C Buffer prevents proper shutdown when disabling GPS, need a workaround for this.
             # GPS_EN.value = False 
             # shutdown()
@@ -165,9 +164,9 @@ async def rover_loop():
 if __name__ == "__main__":
     try:
         gc.collect()
-        print("Point 2 Available memory: {} bytes".format(gc.mem_free()))
-        # asyncio.run(asyncio.wait_for_ms(asyncio.gather(rover_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
-        asyncio.run(asyncio.wait_for_ms(asyncio.gather(rover_loop()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
+        logger.debug("Point 2 Available memory: {} bytes".format(gc.mem_free()))
+        asyncio.run(asyncio.wait_for_ms(asyncio.gather(rover_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
+        # asyncio.run(asyncio.wait_for_ms(asyncio.gather(rover_loop()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
         # shutdown()
     except MemoryError:
         logger.critical("Out of Memory - Resetting Device.")
