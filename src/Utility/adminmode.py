@@ -12,10 +12,9 @@ print("Setting up I2Cs\n")
 from Drivers.TMP117 import *
 from Drivers.RTC import *
 # from Drivers.Accelerometer import *
-from Drivers.ADXL import *
+#from Drivers.ADXL import *
 print("Done\n")
 # print("Setting up UARTs\n")
-# worth putting a try catch block in one instance here
 from Drivers.PSU import *
 # from Drivers.SWARM import *
 from Drivers.DGPS import *
@@ -25,24 +24,6 @@ from Drivers.I2C_Devices import *
 
 # pin_ip = AnalogIn(board.A3)
 ADMIN_FLAG = False
-
-def calibrate_offset():
-    """Calibrates offset by populating once
-
-    Returns:
-        float: atan of calibrated offset to one slope
-    """
-    ADXL_343.offset = (0,0,0)
-    x = ADXL_343.raw_x
-    y = ADXL_343.raw_y
-    z = ADXL_343.raw_z
-
-    ADXL_343.offset = (
-        round(-x / 8),
-        round(-y / 8),
-        round(-(z - 250) / 8), 
-    )
-    return ADXL_343.offset
 
 def diskfree():
     info = os.statvfs("/sd")
@@ -62,21 +43,7 @@ def print_data_entries():
         pass
 
     """ Nodes could have been damaged due to using the wrong polarity? """
-# def voltage_readings(pin):
-#     global lc7 
-#     # TODO: cannot use this sensor, maybe faulty? Sensor will be replaced with the same
-#     # input method used previously with a couple of resistors in the form of a potential divider.
-#     # Will be reading the inputs via an ADC input, just need to decide on the actual pin to use.
-#     """ DEPRECATED AT THE MOMENT """
-#     # try:
-#     # print("Battery Voltage: %0.3fV" % (1+lc7.cell_voltage))
-#     # print("Battery Percentage: %0.1F %%" %lc7.cell_percent)
-#     # except BaseException:
-#     #     print("Sensor not connected.")
-#     #     pass
-#     # return ("Vbat: {.2f}V".format((pin_ip.value * 3.3) / 65536))
-#     """ BAT V readings are inconsistent """
-#     print((pin.value * 3.3) / 65536)
+
 
 def read_bat_voltage():
     enable_BATV()
@@ -169,9 +136,6 @@ def radio_test():
 def temperature_sensor(): # uses board.SCL and board.SDA
     print(TMP_117.get_temperature())
 
-def accelerometer_slope():
-    xoff, yoff = ADXL_343.calib_accel()
-    print(ADXL_343.accelerometer_to_slope(xoff,yoff))
 #TODO: 
 # - Check DateTime - RTC
 # - Check SPI Mounted and available Storage
@@ -196,8 +160,7 @@ def admin_menu():
     print("7\tXBee Radio - UART")
     print("8\tTemperature - TMP117")
     print("9\tBatV")
-    print("10\tAccelerometer Slope - ADXL343")
-
+    
     print("Push Button or Enter 0 to exit Admin mode")
 
 def admincmd(c):

@@ -30,34 +30,6 @@ logger = logging.getLogger("BASE")
 
 #this is a global variable so can still get the data even if the rover loop times out
 finished_rovers: dict[int, bool] = {}
-# when to send data
-COMMS_TIME = [12]
-#CS - chip select global variable for SPI SMT SD Card
-cs = digitalio.DigitalInOut(board.D4)
-
-# get current time from GPS or RTC? Probably best to be GPS...
-# datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc))
-
-# may want to put this in a separate module function to keep base.py clean
-def mount_SD():
-    try:
-        print("Mounting to SD Card")
-        spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
-        # fs = sdcardio.SDCard(spi, SPI_CS)
-        fs = adafruit_sdcard.SDCard(spi, cs)
-
-        # vfs = "/measurements"
-        vfs = storage.VfsFat(fs)
-        storage.mount(vfs,"/sd")
-        print("\nSuccessfully Mounted")
-    except OSError:
-        print("SD Card not active, please try again.")
-    # SPI_CS: False
-
-
-# get current time from GPS or RTC? Probably best to be GPS...
-# datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc))
-
 
 async def clock_calibrator():
     """Task that waits until the GPS has a timestamp and then calibrates the RTC using GPS time
