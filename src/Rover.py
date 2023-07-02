@@ -96,12 +96,16 @@ async def handle_rtcm3_packets():
 
 async def handle_gps_updates():
     """Updates GPS info asynchronously"""
+    global fix4_reading_saved
     while not fix4_reading_saved:
         gps_updated = False
         while GPS_DEVICE.update():
+            logger.debug("ROVER_GPS_UPDATE_SUCCESS?")
             gps_updated = True
-        logger.debug(f"GPS_UPDATE: {gps_updated}")
+        if gps_updated:
+            logger.debug("GPS_UPDATED!")
         if gps_updated and GPS_DEVICE.fix_quality == 4:
+        # if gps_updated:
             logger.info("New coords with fix 4 found!")
             GPS_SAMPLES["lats"].append(GPS_DEVICE.latitude)
             GPS_SAMPLES["longs"].append(GPS_DEVICE.longitude)
@@ -177,7 +181,7 @@ async def transmit_data():
         else:
             logger.info("Telling base that we're finished")
             radio.broadcast_data(PacketType.FIN, struct.pack(FormatStrings.PACKET_DEVICE_ID, BASE_ID))
-        asyncio.sleep(2)# let base respond (within 2 seconds)
+        await asyncio.sleep(2)# let base respond (within 2 seconds)
 
         
 
@@ -289,7 +293,7 @@ if __name__ == "__main__":
     try:
         gc.collect()
         logger.debug("Point 2 Available memory: {} bytes".format(gc.mem_free()))
-        asyncio.run(asyncio.wait_for_ms(asyncio.gather(radio_receive_loop(), transmit_data(), handle_acks(), handle_rtcm3_packets(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
+        asyncio.run(asyncio.wait_for_ms(asyncio.gather(radio_receive_loop(), transmit_data(), handle_acks(), handle_rtcm3_packets(), handle_gps_updates(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
         # asyncio.run(asyncio.wait_for_ms(asyncio.gather(rover_loop()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
         logger.info("ROVER_COMPLETE")
         # shutdown()

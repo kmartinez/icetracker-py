@@ -13,8 +13,8 @@ import gc
 logger = logging.getLogger("GPS")
 
 class DGPS(glactracker_gps.GPS_GtopI2C):
-    def __init__(self, i2c: I2C, rtcm_uart: AsyncUART, debug: bool = False) -> None:
-        super().__init__(i2c, address=0x42, debug=False)
+    def __init__(self, i2c: I2C, rtcm_uart: AsyncUART, debug: bool = False, timeout = 0) -> None:
+        super().__init__(i2c, address=0x42, debug=debug, timeout=timeout)
         self.rtcm_uart = rtcm_uart
     
     def rtk_calibrate(self, rtcm3_data: bytes):
