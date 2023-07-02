@@ -63,8 +63,8 @@ if __name__ == "__main__":
         logger.info("Current Time: %d:%d", hh, mm)
         nextwake = get_next_alarm_time(hh, mm)
 
-        logger.info("Next wake time = %d:%d", nextwake[0], nextwake[1])
         RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,nextwake[0],nextwake[1],0,wday,yday,dst]), "daily")
+        logger.info("Next wake time = %d:%d", RTC_DEVICE.alarm1[0][3], RTC_DEVICE.alarm1[0][4])
         RTC_DEVICE.alarm1_interrupt = True
 
         if not DEBUG["WATCHDOG_DISABLE"]:
