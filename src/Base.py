@@ -30,15 +30,18 @@ logger = logging.getLogger("BASE")
 
 #this is a global variable so can still get the data even if the rover loop times out
 finished_rovers: dict[int, bool] = {}
+rtcm3_rovers: dict[int, bool] = {}
 
 async def clock_calibrator():
     """Task that waits until the GPS has a timestamp and then calibrates the RTC using GPS time
     """
     gc.collect()
     while GPS_DEVICE.timestamp_utc == None:
-        while not GPS_DEVICE.update():
-            pass
-        RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
+        logger.debug("CLOCK_CALIB_RUN!")
+        GPS_DEVICE.update()
+        if GPS_DEVICE.timestamp_utc is not None:
+            RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
+        await asyncio.sleep(0.5)
 
 async def feed_watchdog():
     """Upon being executed by a scheduler, this task will feed the watchdog then yield.
@@ -52,9 +55,21 @@ async def feed_watchdog():
 async def rtcm3_loop():
     """Task that continuously broadcasts available RTCM3 correction data.
     """
+    global rtcm3_rovers
+    rtcm3_pause = False
     while len(finished_rovers) < ROVER_COUNT: #Finish running when rover data is done
         rtcm3_data = await GPS_DEVICE.get_rtcm3_message()
-        radio.broadcast_data(PacketType.RTCM3, rtcm3_data)
+        if len(rtcm3_rovers) < 1:
+            rtcm3_pause = False
+        else:
+            for k,v in rtcm3_rovers:
+                if v:
+                    rtcm3_pause = True
+            rtcm3_pause = False
+        
+        logger.debug(f"RTCM3_PAUSE: {rtcm3_pause}")
+        if not rtcm3_pause:
+            radio.broadcast_data(PacketType.RTCM3, rtcm3_data)
 
 async def rover_data_loop():
     """Task that continuously processes all incoming rover data until timeout or all rovers are finished.
@@ -78,28 +93,34 @@ async def rover_data_loop():
                 logger.warning("Empty GPS data received")
                 continue
             data = GPSData.from_json(packet.payload.decode('utf-8'))
+            # print(data)
+            # enable_BATV()
+            # time.sleep(0.5)
+            # GPS_DEVICE.update()
+            #
+            # base_data = GPSData(
+            #     DEVICE_ID,
+            # # datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc)).isoformat(), # for GPS timing data
+            #     datetime.fromtimestamp(time.mktime(RTC_DEVICE.datetime)),
+            #     TMP_117.get_temperature(),
+            #     BAT_VOLTS.battery_voltage(BAT_V),
+            #     json.loads(json.dumps(data)))
             print(data)
-            enable_BATV()
-            time.sleep(0.5)
-            GPS_DEVICE.update()
-
-            base_data = GPSData(
-                DEVICE_ID,
-            # datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc)).isoformat(), # for GPS timing data
-                datetime.fromtimestamp(time.mktime(RTC_DEVICE.datetime)),
-                TMP_117.get_temperature(),
-                BAT_VOLTS.battery_voltage(BAT_V),
-                json.loads(json.dumps(data)))
+            rtcm3_rovers[packet.sender] = True
             with open("/sd/data_entries/" + str(packet.sender) + "-" + data["timestamp"].replace(":", "_"), "w") as file:
                 data['rover_id'] = packet.sender
                 logger.debug(f"WRITING_DATA_TO_FILE: {data}")
-                file.write(base_data.to_json() + '\n')
+                file.write(json.dumps(data) + '\n')
             
             radio.send_response(PacketType.ACK, packet.sender)
 
         elif packet.type == PacketType.FIN and struct.unpack(radio.FormatStrings.PACKET_DEVICE_ID, packet.payload)[0] == DEVICE_ID:
+            rtcm3_rovers[packet.sender] = False
             finished_rovers[packet.sender] = True
-            radio.send_response(PacketType.FIN, packet.sender)
+            await asyncio.sleep(3)
+            for i in range(10):
+                radio.send_response(PacketType.FIN, packet.sender)
+                await asyncio.sleep(0.05)
         logger.info("Received radio packet processed OK")
     logger.info("Loop for receiving rover data has ended")
                 
@@ -118,7 +139,7 @@ if __name__ == "__main__":
 
     try:
         logger.info("Starting async tasks")
-        loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(rover_data_loop(), rtcm3_loop(), clock_calibrator(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
+        loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(rover_data_loop(), rtcm3_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
         #use this for indoor tests
         #loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(rover_data_loop(), rtcm3_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000)) # for indoor testing
         logger.info("Async tasks have finished running")

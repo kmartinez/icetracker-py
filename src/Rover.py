@@ -50,23 +50,25 @@ def truncate_degrees(longitude, latitude):
 
     return lat, lon 
 
-
-async def feed_watchdog():
-    while True:
-        if not DEBUG["WATCHDOG_DISABLE"]:
-            watchdog.feed()
-        await asyncio.sleep(0)
-
 ACK_Packets: list[RadioPacket] = []
 RTCM3_Packets: list[RadioPacket] = []
 FIN_Received: bool = False
+
+async def feed_watchdog():
+    global FIN_Received
+    while not FIN_Received:
+        if not DEBUG["WATCHDOG_DISABLE"]:
+            watchdog.feed()
+        await asyncio.sleep(0)
+    
+    logger.debug("ROVER: STOP_FEEDING_WATCHDOG")
 
 async def radio_receive_loop():
     """Receives radio messages"""
     global ACK_Packets
     global RTCM3_Packets
     global FIN_Received
-    while True:
+    while not FIN_Received:
         logger.info("ROVER: Waiting for packet")
         try:
             packet = await radio.receive_packet()
@@ -75,15 +77,20 @@ async def radio_receive_loop():
             logger.warning(f"ROVER: radio buffer size {radio.UART.in_waiting}")
             radio.UART.reset_input_buffer()
             continue
+        logger.info("ROVER: packet received")
+        logger.debug(f"ROVER: PACKET_TYPE: {packet.type}")
 
         if packet.type == PacketType.ACK and fix4_reading_saved and struct.unpack(radio.FormatStrings.PACKET_DEVICE_ID, packet.payload)[0] == DEVICE_ID:
+            logger.debug("ROVER_RADIO_TASK: ACK RECEIVED")
             ACK_Packets.append(packet)
         elif packet.type == PacketType.RTCM3 and not fix4_reading_saved:
             RTCM3_Packets.append(packet)
         elif packet.type == PacketType.FIN and fix4_reading_saved and struct.unpack(FormatStrings.PACKET_DEVICE_ID, packet.payload)[0] == DEVICE_ID:
+            logger.debug("ROVER_RADIO_TASK: FIN RECEIVED")
             FIN_Received = True
             break
-        logger.info("ROVER: packet received")
+    
+    logger.debug("ROVER: RADIO_TASK_END")
 
 async def handle_rtcm3_packets():
     global RTCM3_Packets
@@ -93,15 +100,20 @@ async def handle_rtcm3_packets():
             RTCM3_Packets = RTCM3_Packets[1:]
             logger.info("ROVER: RTCM3 processed")
         await asyncio.sleep(0)
+    
+    logger.debug("ROVER: RTCM_TASK_END")
 
 async def handle_gps_updates():
     """Updates GPS info asynchronously"""
     global fix4_reading_saved
     while not fix4_reading_saved:
         gps_updated = False
+        GPS_DEVICE.update() #no garbage
+        logger.log(5, "ROVER_GPS_UPDATE_BEGIN")
         while GPS_DEVICE.update():
             logger.debug("ROVER_GPS_UPDATE_SUCCESS?")
             gps_updated = True
+        logger.log(5, "ROVER_GPS_UPDATE_END")
         if gps_updated:
             logger.debug("GPS_UPDATED!")
         if gps_updated and GPS_DEVICE.fix_quality == 4:
@@ -146,16 +158,21 @@ async def handle_gps_updates():
 
                 gc.collect()
                 logger.debug("Point 7 Available memory: {} bytes".format(gc.mem_free()))
-        await asyncio.sleep(0)
+        logger.log(5, "GPS_TASK_SLEEPING")
+        await asyncio.sleep(0.5)
+    
+    logger.debug("ROVER: GPS_TASK_END")
 
 async def handle_acks():
     global ACK_Packets
+    global FIN_Received
     """Handles any ACKs that come in"""
     while not fix4_reading_saved:
         await asyncio.sleep(0)
     #ACK received: base received our data
     #We can now safely delete from SD
-    while True:
+    logger.info("ROVER: RECV ACKS")
+    while not FIN_Received:
         while len(ACK_Packets) > 0 and len(os.listdir("/sd/data_entries/")) > 0:
             #WARNING, this has no means of checking what data this ack is for
             logger.info("ACK received from base, deleting sent data")
@@ -165,12 +182,16 @@ async def handle_acks():
             break
         await asyncio.sleep(0)
     
+    logger.debug("ROVER: ACK_TASK_END")
+    
 async def transmit_data():
     global FIN_Received
     while not fix4_reading_saved:
-        await asyncio.sleep(0)
+        await asyncio.sleep(1)
     logger.info("Rover is finished collecting!")
 
+    logger.debug("ROVER_TRANSMIT_TASK: WARNING: clearing radio buffer to maybe help lag? ")
+    radio.UART.reset_input_buffer()
     while not FIN_Received:
         remaining_paths = os.listdir("/sd/data_entries/")
         if (len(remaining_paths) > 0):
@@ -181,7 +202,9 @@ async def transmit_data():
         else:
             logger.info("Telling base that we're finished")
             radio.broadcast_data(PacketType.FIN, struct.pack(FormatStrings.PACKET_DEVICE_ID, BASE_ID))
-        await asyncio.sleep(2)# let base respond (within 2 seconds)
+        await asyncio.sleep(4)# let base respond (within 2 seconds)
+    
+    logger.debug("ROVER: TRANSMIT_TASK_END")
 
         
 

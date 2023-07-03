@@ -9,6 +9,7 @@ import board
 from Drivers.AsyncUART import AsyncUART
 import binascii
 import gc
+import config
 
 logger = logging.getLogger("GPS")
 
@@ -33,6 +34,22 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
             "SATELLITES_STR": self.satellites,
             "REMAINING_BUFFER_SIZE": self.in_waiting
         }
+    
+    def update(self):
+        if (DEBUG["FAKE_DATA"]):
+            #Fake data
+            logger.warning("Fake data mode is on! No real GPS data will be used on this device!!!!")
+            self.latitude = DecimalNumber("59.3")
+            self.longitude = DecimalNumber("-1.2")
+            self.altitude_m = 5002.3
+            self.timestamp_utc = localtime(time())
+            self.fix_quality = 4
+            self.horizontal_dilution = "0.01"
+            self.satellites = "9"
+            return True
+        else:
+            return super().update()
+
     
     def update_with_all_available(self):
         logger.info("read GPS")

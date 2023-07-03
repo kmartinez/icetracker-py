@@ -78,17 +78,18 @@ if __name__ == "__main__":
             os.mkdir("/sd/data_entries")
         if "sent_data" not in os.listdir("/sd/"):
             os.mkdir("/sd/sent_data")
-        if RTC_DEVICE.datetime[3] in COMMS_TIME and RTC_DEVICE.datetime[4] < 15:
-            logger.info('Comms Time')
-            exec(open('./Comms.py').read())
-        else:
-            logger.info("not COMMS time")
-            if DEVICE_ID >= 100:
+        
+        logger.info("not COMMS time")
+        if DEVICE_ID >= 100:
+            if RTC_DEVICE.datetime[3] in COMMS_TIME:
+                logger.info('Comms Time')
+                exec(open('./Comms.py').read())
+            else:
                 logger.info("run base")
                 exec(open('./Base.py').read())
-            else:
-                logger.info("run rover")
-                exec(open('./Rover.py').read())
+        else:
+            logger.info("run rover")
+            exec(open('./Rover.py').read())
     except BaseException as error:
         if type(error) is KeyboardInterrupt:
             logger.warning(traceback.format_exception(type(error), error, error.__traceback__, None, False))
