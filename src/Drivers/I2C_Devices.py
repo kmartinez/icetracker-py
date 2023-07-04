@@ -14,7 +14,7 @@ try:
     '''Main I2C Bus for communication with TMP117, GPS NMEA and DS3231 Chip'''
     TMP_117: TMP117 = TMP117(I2C)
     '''TMP_117 I2C Init'''
-    GPS_DEVICE: DGPS = DGPS(I2C, RTCM3_UART)
+    GPS_DEVICE: DGPS = DGPS(I2C, RTCM3_UART, timeout=0.01)
     '''DGPS I2C/UART Init'''
     RTC_DEVICE: RTC = RTC(I2C)
     '''RTC timer'''

@@ -9,17 +9,18 @@ import board
 from Drivers.AsyncUART import AsyncUART
 import binascii
 import gc
+import config
 
 logger = logging.getLogger("GPS")
 
 class DGPS(glactracker_gps.GPS_GtopI2C):
-    def __init__(self, i2c: I2C, rtcm_uart: AsyncUART, debug: bool = False) -> None:
-        super().__init__(i2c, address=0x42, debug=False)
+    def __init__(self, i2c: I2C, rtcm_uart: AsyncUART, debug: bool = False, timeout = 0) -> None:
+        super().__init__(i2c, address=0x42, debug=debug, timeout=timeout)
         self.rtcm_uart = rtcm_uart
     
     def rtk_calibrate(self, rtcm3_data: bytes):
         logger.debug(f"CALIBRATING_RTCM3_BYTES: {binascii.hexlify(rtcm3_data)}")
-        print(len(binascii.hexlify(rtcm3_data)))
+        #print(len(binascii.hexlify(rtcm3_data)))
         self.rtcm_uart.write(rtcm3_data)
 
     def to_dict(self):
@@ -33,6 +34,22 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
             "SATELLITES_STR": self.satellites,
             "REMAINING_BUFFER_SIZE": self.in_waiting
         }
+    
+    def update(self):
+        if (DEBUG["FAKE_DATA"]):
+            #Fake data
+            logger.warning("Fake data mode is on! No real GPS data will be used on this device!!!!")
+            self.latitude = DecimalNumber("59.3")
+            self.longitude = DecimalNumber("-1.2")
+            self.altitude_m = 5002.3
+            self.timestamp_utc = localtime(time())
+            self.fix_quality = 4
+            self.horizontal_dilution = "0.01"
+            self.satellites = "9"
+            return True
+        else:
+            return super().update()
+
     
     def update_with_all_available(self):
         logger.info("read GPS")

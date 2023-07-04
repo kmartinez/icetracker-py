@@ -160,6 +160,7 @@ def admin_menu():
     print("7\tXBee Radio - UART")
     print("8\tTemperature - TMP117")
     print("9\tBatV")
+    print("11\tDelete all SD data")
     
     print("Push Button or Enter 0 to exit Admin mode")
 
@@ -203,6 +204,19 @@ def admincmd(c):
     elif c == "10":
         print("Accelerometer Slope:")
         accelerometer_slope()
+    elif c == "11":
+        print("REMOVING ALL DATA")
+        if "data_entries" in os.listdir("/sd/"):
+            for file in os.listdir("/sd/data_entries/"):
+                os.remove("/sd/data_entries/" + file)
+            #os.rmdir("/sd/data_entries")
+        if "sent_data" in os.listdir("/sd/"):
+            for file in os.listdir("/sd/sent_data/"):
+                os.remove("/sd/sent_data/" + file)
+            #os.rmdir("/sd/sent_data")
+        if "error_log.txt" in os.listdir("/sd/"):
+            os.remove("/sd/error_log.txt")
+        print("DONE")
     elif c == "0":
         ADMIN_FLAG = False
     else:   

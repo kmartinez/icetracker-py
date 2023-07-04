@@ -25,7 +25,7 @@ def var(buffer):
     
     cached_length = len(buffer)
     cached_mean = mean(buffer)
-    print("Buffer:", buffer)
+    #print("Buffer:", buffer)
     diff_to_means = map(lambda x: x - cached_mean, buffer) #This is an iterable, not a list. Still works with sum but you've been warned
-    print("diff_to_means:", diff_to_means)
+    #print("diff_to_means:", diff_to_means)
     return sum(map(square_for_var, diff_to_means)) / cached_length
