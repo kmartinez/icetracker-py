@@ -137,6 +137,8 @@ async def rover_data_loop():
             for i in range(10):
                 radio.send_response(PacketType.FIN, packet.sender)
                 await asyncio.sleep(0.05)
+            if not len(finished_rovers) < ROVER_COUNT:
+                await asyncio.sleep(3) #give time to send before shutdown?
         logger.info("Received radio packet processed OK")
     logger.info("Loop for receiving rover data has ended")
                 
