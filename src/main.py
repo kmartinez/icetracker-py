@@ -71,6 +71,7 @@ if __name__ == "__main__":
             watchdog.timeout = 16
             watchdog.mode = WatchDogMode.RESET
             watchdog.feed()
+            logger.info("WATCHDOG_ENABLED")
     
     try:
         #Normal boot procedure
