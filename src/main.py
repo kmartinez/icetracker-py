@@ -18,7 +18,7 @@ rtc.set_time_source(RTC_DEVICE)
 def get_next_alarm_time(curr_hr, curr_min):
     next_hr = None
     next_min = None
-
+    
     for i in WAKE_UP_WINDOW_MINS:
         if (i > curr_min):
             next_min = i

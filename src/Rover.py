@@ -75,7 +75,7 @@ async def radio_receive_loop():
         except radio.ChecksumError:
             logger.warning("ROVER: radio checksum fail")
             logger.warning(f"ROVER: radio buffer size {radio.UART.in_waiting}")
-            radio.UART.reset_input_buffer()
+            radio.UART.reset_input_buffer() #clear garbage?
             continue
         logger.info("ROVER: packet received")
         logger.debug(f"ROVER: PACKET_TYPE: {packet.type}")
