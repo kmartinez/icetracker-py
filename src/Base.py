@@ -75,9 +75,10 @@ async def rtcm3_loop():
         if len(rtcm3_rovers) < 1:
             rtcm3_pause = False
         else:
-            for k,v in rtcm3_rovers:
+            for k,v in rtcm3_rovers.items():
                 if v:
                     rtcm3_pause = True
+                    break
             rtcm3_pause = False
         
         logger.debug(f"RTCM3_PAUSE: {rtcm3_pause}")
@@ -92,6 +93,7 @@ async def rover_data_loop():
             logger.info("Waiting for a radio packet")
             packet = await radio.receive_packet()
             logger.info(f"packet received from {packet.sender}")
+            logger.debug(f"PACKET TYPE: {packet.type}")
         except radio.ChecksumError:
             logger.warning("Radio received invalid packet")
             continue
@@ -128,12 +130,15 @@ async def rover_data_loop():
             radio.send_response(PacketType.ACK, packet.sender)
 
         elif packet.type == PacketType.FIN and struct.unpack(radio.FormatStrings.PACKET_DEVICE_ID, packet.payload)[0] == DEVICE_ID:
+            logger.info(f"FIN RECEIVED FROM {packet.sender}")
             rtcm3_rovers[packet.sender] = False
             finished_rovers[packet.sender] = True
             await asyncio.sleep(3)
             for i in range(10):
                 radio.send_response(PacketType.FIN, packet.sender)
                 await asyncio.sleep(0.05)
+            if not len(finished_rovers) < ROVER_COUNT:
+                await asyncio.sleep(3) #give time to send before shutdown?
         logger.info("Received radio packet processed OK")
     logger.info("Loop for receiving rover data has ended")
                 

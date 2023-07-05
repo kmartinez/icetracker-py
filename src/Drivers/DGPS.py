@@ -10,6 +10,7 @@ from Drivers.AsyncUART import AsyncUART
 import binascii
 import gc
 import config
+import random
 
 logger = logging.getLogger("GPS")
 
@@ -46,7 +47,10 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
             self.fix_quality = 4
             self.horizontal_dilution = "0.01"
             self.satellites = "9"
-            return True
+            if random.randrange(15) < 1:
+                return True
+            else:
+                return False
         else:
             return super().update()
 
