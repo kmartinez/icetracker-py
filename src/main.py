@@ -18,7 +18,7 @@ rtc.set_time_source(RTC_DEVICE)
 def get_next_alarm_time(curr_hr, curr_min):
     next_hr = None
     next_min = None
-    
+
     for i in WAKE_UP_WINDOW_MINS:
         if (i > curr_min):
             next_min = i
@@ -39,7 +39,8 @@ def get_next_alarm_time(curr_hr, curr_min):
 
 if __name__ == "__main__":
     if ADMIN_IO.value:
-        #Debug mode set, TODO boot menu
+        #Debug mode set
+        logger.info("Alarm Time: %d:%02d", RTC_DEVICE.alarm1[0][3], RTC_DEVICE.alarm1[0][4])
         config.DEBUG["WATCHDOG_DISABLE"] = True
         config.GLOBAL_FAILSAFE_TIMEOUT = 99999
         print("""BOOT_MENU:

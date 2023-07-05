@@ -58,6 +58,7 @@ async def read_sensors():
     await asyncio.sleep(2)
     data = {}
     data["id"] = DEVICE_ID
+    data["timestamp"] = datetime.fromtimestamp(time.mktime(RTC_DEVICE.datetime)).isoformat()
     data["temp"] = TMP_117.get_temperature()
     data["batv"] = BAT_VOLTS.battery_voltage(BAT_V)
     with open("/sd/data_entries/" + str(DEVICE_ID) + "-" + datetime.fromtimestamp(time.mktime(RTC_DEVICE.datetime)).isoformat().replace(":", "_"), "w") as file:
