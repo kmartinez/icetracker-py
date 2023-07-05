@@ -43,6 +43,8 @@ WAKE_UP_WINDOW_MINS = [0]
 
 BASE_ID = 100 #Rover now needs to know this
 
+MAX_READINGS_IN_SINGLE_HTTP = 4
+
 SECRETS = { #I would put this on its own file untracked by git if you ever put any actual sensitive info here
     "apn": "TM",
     "apn_username": "",
