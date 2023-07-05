@@ -63,6 +63,16 @@ async def feed_watchdog():
     
     logger.debug("ROVER: STOP_FEEDING_WATCHDOG")
 
+async def clock_calibrator():
+    """Task that waits until the GPS has a timestamp and then calibrates the RTC using GPS time
+    """
+    gc.collect()
+    while GPS_DEVICE.timestamp_utc is None:
+        #let GPS update with the GPS task
+        logger.debug("CLOCK_CALIB_RUN!")
+        await asyncio.sleep(0.5)
+    RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
+
 async def radio_receive_loop():
     """Receives radio messages"""
     global ACK_Packets
@@ -316,7 +326,7 @@ if __name__ == "__main__":
     try:
         gc.collect()
         logger.debug("Point 2 Available memory: {} bytes".format(gc.mem_free()))
-        asyncio.run(asyncio.wait_for_ms(asyncio.gather(radio_receive_loop(), transmit_data(), handle_acks(), handle_rtcm3_packets(), handle_gps_updates(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
+        asyncio.run(asyncio.wait_for_ms(asyncio.gather(radio_receive_loop(), transmit_data(), handle_acks(), handle_rtcm3_packets(), handle_gps_updates(), clock_calibrator(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
         # asyncio.run(asyncio.wait_for_ms(asyncio.gather(rover_loop()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
         logger.info("ROVER_COMPLETE")
         # shutdown()
