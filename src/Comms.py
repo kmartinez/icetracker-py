@@ -48,6 +48,10 @@ def send_and_delete_json_payload(http_payload, payload_paths):
         logger.warning(f"HTTP_REQUEST_STATUS: {response.status_code}, REASON: {response.reason}")
 
 if __name__ == "__main__":
+    if len(os.listdir("/sd/data_entries/")) < 1:
+        logger.warning("No data detected in SD. Not bothering to communicate")
+        sys.exit()
+
     logger.info("DISABLING GPS")
     # GPS_EN.value = False
 
