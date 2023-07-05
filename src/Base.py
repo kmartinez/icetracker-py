@@ -36,7 +36,7 @@ async def clock_calibrator():
     """Task that waits until the GPS has a timestamp and then calibrates the RTC using GPS time
     """
     gc.collect()
-    while GPS_DEVICE.timestamp_utc == None:
+    while GPS_DEVICE.timestamp_utc is None:
         logger.debug("CLOCK_CALIB_RUN!")
         GPS_DEVICE.update()
         if GPS_DEVICE.timestamp_utc is not None:
@@ -158,7 +158,7 @@ if __name__ == "__main__":
 
     try:
         logger.info("Starting async tasks")
-        loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(read_sensors(), rover_data_loop(), rtcm3_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
+        loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(read_sensors(), clock_calibrator(), rover_data_loop(), rtcm3_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
         # loop.run_until_complete(rover_data_loop())
         #use this for indoor tests
         #loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(rover_data_loop(), rtcm3_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000)) # for indoor testing
