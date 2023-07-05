@@ -24,7 +24,8 @@ def mount_SD(SPI_SD,CS):
 
 
 def read_file(path):
-    with open(path, "r") as f:
+    data_entry_path = os.listdir("/sd/data_entry/" + path)
+    with open(data_entry_path, "r") as f:
         print("Printing lines in file:")
         line = f.readline()
         while line != '':
