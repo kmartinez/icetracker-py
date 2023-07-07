@@ -28,7 +28,7 @@ finished_rovers: dict[int, bool] = {}
 if __name__ == "__main__":
     logger.info("ENABLING GSM COMMS")
 
-    fona = FONA(GSM_UART, GSM_RST_PIN, debug=False)
+    fona = FONA(GSM_UART, GSM_RST_PIN, debug=True)
     
     logger.info("FONA initialized")
 
@@ -67,4 +67,25 @@ if __name__ == "__main__":
     TEXT_URL = "http://wifitest.adafruit.com/testwifi/index.html"
     logger.info("My IP address is: %s", fona.local_ip)
     logger.info("IP lookup adafruit.com: %s", fona.get_host_by_name("adafruit.com"))
-    logger.info(requests.get(TEXT_URL).text)
+    #response = requests.get(TEXT_URL)
+    response = requests.post("http://iotgate.ecs.soton.ac.uk/myapp", json=[{
+        "test1": "asdfasdfasdfasdf",
+        "test2": "asdfasdfasdfasdf",
+        "test3": "asdfasdfasdfasdf",
+        "test4": "asdfasdfasdfasdf",
+        "test5": "asdfasdfasdfasdf",
+        "test6": "asdfasdfasdfasdf",
+        "test11": "asdfasdfasdfasdf",
+        "test22": "asdfasdfasdfasdf",
+        "test33": "asdfasdfasdfasdf",
+        "test44": "asdfasdfasdfasdf",
+        "test55": "asdfasdfasdfasdf",
+        "test66": "asdfasdfasdfasdf",
+        "test111": "asdfasdfasdfasdf",
+        "test212": "asdfasdfasdfasdf",
+        "test313": "asdfasdfasdfasdf",
+        "test414": "asdfasdfasdfasdf",
+        "test515": "asdfasdfasdfasdf",
+        "test616": "asdfasdfasdfasdf",
+    }])
+    logger.info(f"STATUS: {response.status_code}")

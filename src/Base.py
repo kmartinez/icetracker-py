@@ -36,7 +36,7 @@ async def clock_calibrator():
     """Task that waits until the GPS has a timestamp and then calibrates the RTC using GPS time
     """
     gc.collect()
-    while GPS_DEVICE.timestamp_utc == None:
+    while GPS_DEVICE.timestamp_utc is None:
         logger.debug("CLOCK_CALIB_RUN!")
         GPS_DEVICE.update()
         if GPS_DEVICE.timestamp_utc is not None:
@@ -58,6 +58,7 @@ async def read_sensors():
     await asyncio.sleep(2)
     data = {}
     data["id"] = DEVICE_ID
+    data["timestamp"] = datetime.fromtimestamp(time.mktime(RTC_DEVICE.datetime)).isoformat()
     data["temp"] = TMP_117.get_temperature()
     data["batv"] = BAT_VOLTS.battery_voltage(BAT_V)
     with open("/sd/data_entries/" + str(DEVICE_ID) + "-" + datetime.fromtimestamp(time.mktime(RTC_DEVICE.datetime)).isoformat().replace(":", "_"), "w") as file:
@@ -137,6 +138,8 @@ async def rover_data_loop():
             for i in range(10):
                 radio.send_response(PacketType.FIN, packet.sender)
                 await asyncio.sleep(0.05)
+            if not len(finished_rovers) < ROVER_COUNT:
+                await asyncio.sleep(3) #give time to send before shutdown?
         logger.info("Received radio packet processed OK")
     logger.info("Loop for receiving rover data has ended")
                 
@@ -155,7 +158,7 @@ if __name__ == "__main__":
 
     try:
         logger.info("Starting async tasks")
-        loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(read_sensors(), rover_data_loop(), rtcm3_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
+        loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(read_sensors(), clock_calibrator(), rover_data_loop(), rtcm3_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
         # loop.run_until_complete(rover_data_loop())
         #use this for indoor tests
         #loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(rover_data_loop(), rtcm3_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000)) # for indoor testing
