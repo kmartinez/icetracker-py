@@ -21,7 +21,7 @@ from Drivers.DGPS import *
 # print("Done\n")
 from Drivers.BATV import *
 from Drivers.I2C_Devices import *
-
+import sys
 # pin_ip = AnalogIn(board.A3)
 ADMIN_FLAG = False
 
@@ -161,6 +161,7 @@ def admin_menu():
     print("8\tTemperature - TMP117")
     print("9\tBatV")
     print("11\tDelete all SD data")
+    print("12\tSystem Shutdown")
     
     print("Push Button or Enter 0 to exit Admin mode")
 
@@ -217,6 +218,10 @@ def admincmd(c):
         if "error_log.txt" in os.listdir("/sd/"):
             os.remove("/sd/error_log.txt")
         print("DONE")
+    elif c == "12":
+        print("Shutting down... \nSafe to Unplug.")
+        sys.exit(0)
+        
     elif c == "0":
         ADMIN_FLAG = False
     else:   
