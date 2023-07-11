@@ -136,6 +136,28 @@ def radio_test():
 def temperature_sensor(): # uses board.SCL and board.SDA
     print(TMP_117.get_temperature())
 
+def get_next_alarm_time(curr_hr, curr_min):
+    next_hr = None
+    next_min = None
+
+    for i in WAKE_UP_WINDOW_MINS:
+        if (i > curr_min):
+            next_min = i
+            break
+    if next_min is None:
+        next_min = WAKE_UP_WINDOW_MINS[0]
+        # Current time is above last minute time, so we need to set for the next hr
+        for i in WAKE_UP_WINDOW_HRS:
+            if (i > curr_hr):
+                next_hr = i
+                break
+        if next_hr is None:
+            next_hr = WAKE_UP_WINDOW_HRS[0]
+    else:
+        next_hr = curr_hr
+    
+    return (next_hr, next_min)
+
 #TODO: 
 # - Check DateTime - RTC
 # - Check SPI Mounted and available Storage
@@ -227,8 +249,18 @@ def admincmd(c):
         print("DONE")
 
     elif c == "13":
-        print("Shutting down... \nSafe to Unplug.")
+        print("Setting Next Alarm...")
+        
+        (YY,MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
+        logger.info("Current Time: %d:%d", hh, mm)
+        nextwake = get_next_alarm_time(hh, mm)
+
+        RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,nextwake[0],nextwake[1],0,wday,yday,dst]), "daily")
+        logger.info("Next wake time = %d:%d", RTC_DEVICE.alarm1[0][3], RTC_DEVICE.alarm1[0][4])
+        RTC_DEVICE.alarm1_interrupt = True
+        print("SHUTTING DOWN...\nSafe to Unplug")
         sys.exit(0)
+        
         
     elif c == "0":
         ADMIN_FLAG = False
