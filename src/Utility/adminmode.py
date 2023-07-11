@@ -161,7 +161,8 @@ def admin_menu():
     print("8\tTemperature - TMP117")
     print("9\tBatV")
     print("11\tDelete all SD data")
-    print("12\tSystem Shutdown")
+    print("12\tList Unsent Files")
+    print("13\tSystem Shutdown")
     
     print("Push Button or Enter 0 to exit Admin mode")
 
@@ -186,7 +187,7 @@ def admincmd(c):
     elif c == "4":
         from Drivers.SPI_SD import print_directory
         print(f"Files on SD Chip: ",print_directory("/sd"))
-    elif c == "5":
+    elif c == "6":
         print("Reading NMEA Messages from I2C Pins on GPS board.")
         gps_i2c()
     elif c =="6":
@@ -218,7 +219,14 @@ def admincmd(c):
         if "error_log.txt" in os.listdir("/sd/"):
             os.remove("/sd/error_log.txt")
         print("DONE")
-    elif c == "12":
+    elif c == "2":
+        from Drivers.SPI_SD import print_directory
+        print("Listing All Unsent Files...")
+        # All files that haven't been sent will remain under the data_entries directory.
+        print(print_directory("/sd/data_entries/"))
+        print("DONE")
+
+    elif c == "13":
         print("Shutting down... \nSafe to Unplug.")
         sys.exit(0)
         
