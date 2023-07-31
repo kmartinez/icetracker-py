@@ -64,13 +64,14 @@ async def feed_watchdog():
     logger.debug("ROVER: STOP_FEEDING_WATCHDOG")
 
 async def clock_calibrator():
-    """Task that waits until the GPS has a timestamp and then calibrates the RTC using GPS time
+    """Task that waits until the GPS has a timestamp and then overwrites the RTC using GPS time
     """
-    gc.collect()
+    
     while GPS_DEVICE.timestamp_utc is None:
         #let GPS update with the GPS task
-        logger.debug("CLOCK_CALIB_RUN!")
-        await asyncio.sleep(0.5)
+        logger.debug("CLOCK_CALIB_RUN")
+        await asyncio.sleep(0.5) # FIXES 2HZ so canwait 2s??? Can check if needed like:
+    # if abs(RTC_DEVICE.datetime - GPS_DEVICE.timestamp_utc) > 2 : 
     RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
 
 async def radio_receive_loop():
@@ -84,7 +85,7 @@ async def radio_receive_loop():
             packet = await radio.receive_packet()
         except radio.ChecksumError:
             logger.warning("ROVER: radio checksum fail")
-            logger.warning(f"ROVER: radio buffer size {radio.UART.in_waiting}")
+            logger.warning(f"ROVER: radio buffer has {radio.UART.in_waiting} B")
             radio.UART.reset_input_buffer() #clear garbage?
             continue
         logger.info("ROVER: packet received")
@@ -125,10 +126,10 @@ async def handle_gps_updates():
             gps_updated = True
         logger.log(5, "ROVER_GPS_UPDATE_END")
         if gps_updated:
-            logger.debug("GPS_UPDATED!")
+            logger.debug("GPS_UPDATED")
         if gps_updated and GPS_DEVICE.fix_quality == 4:
         # if gps_updated:
-            logger.info("New coords with fix 4 found!")
+            logger.info("New fix")
             GPS_SAMPLES["lats"].append(GPS_DEVICE.latitude)
             GPS_SAMPLES["longs"].append(GPS_DEVICE.longitude)
 
@@ -143,13 +144,9 @@ async def handle_gps_updates():
                 #TODO: Temporary fix for RTC timing data to be able to send packets across to the base.
                 #Enabling Battery Voltage Pin to read Bat Vol
                 enable_BATV()
-                await asyncio.sleep(2)
+                await asyncio.sleep(2) # could save 1s here?
                 
-                #TODO: only confirm this if using reliable GPS data, otherwise, datetime lags behind
-                #If it got here without reliable GPS data, God help you
-                RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
-                #TODO: Get Static values from config file
-                # xoff, yoff = ADXL_343.calib_accel()
+
                 gps_data = GPSData(
                     datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc)),
                     util.mean(GPS_SAMPLES["lats"].circularBuffer),
@@ -158,7 +155,7 @@ async def handle_gps_updates():
                     int(GPS_DEVICE.satellites),
                     TMP_117.get_temperature(),
                     BAT_VOLTS.battery_voltage(BAT_V),
-                    # tuple(ADXL_343.get_tilts(xoff=ACC_X_OFF, yoff=ACC_Y_OFF))
+                    
                     )
                 
                 with open("/sd/data_entries/" + gps_data.timestamp.isoformat().replace(":", "_"), "w") as file:
@@ -166,10 +163,10 @@ async def handle_gps_updates():
                 logger.info("File write complete")
                 fix4_reading_saved = True
 
-                gc.collect()
+                gc.collect() # NEEDED??? and next line???
                 logger.debug("Point 7 Available memory: {} bytes".format(gc.mem_free()))
         logger.log(5, "GPS_TASK_SLEEPING")
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.5) # CAN BE 1s ???
     
     logger.debug("ROVER: GPS_TASK_END")
 
@@ -212,7 +209,7 @@ async def transmit_data():
         else:
             logger.info("Telling base that we're finished")
             radio.broadcast_data(PacketType.FIN, struct.pack(FormatStrings.PACKET_DEVICE_ID, BASE_ID))
-        await asyncio.sleep(4)# let base respond (within 2 seconds)
+        await asyncio.sleep(4)# let base respond (within 2 seconds) ???
     
     logger.debug("ROVER: TRANSMIT_TASK_END")   
 
