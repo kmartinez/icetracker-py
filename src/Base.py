@@ -37,9 +37,10 @@ async def clock_calibrator():
     """
     gc.collect()
     while GPS_DEVICE.timestamp_utc is None:
-        logger.debug("CLOCK_CALIB_RUN!")
+        logger.debug("CLOCK_CALIB waiting")
         GPS_DEVICE.update()
         if GPS_DEVICE.timestamp_utc is not None:
+            # could check if different by 2s???
             RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
         await asyncio.sleep(0.5)
 
