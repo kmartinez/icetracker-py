@@ -1,5 +1,5 @@
 """
-Config on-board storage for r/w
+Config on-board storage for r/w REALLY??? needs clean out
 """
 
 import board, digitalio, storage
