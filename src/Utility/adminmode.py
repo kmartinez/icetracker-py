@@ -203,25 +203,39 @@ def admincmd(c):
         print("Accelerometer Slope:")
         accelerometer_slope()
     elif c == "11":
-        print("REMOVING ALL DATA")
-        # should ask for a y ???
-        if "data_entries" in os.listdir("/sd/"):
-            for file in os.listdir("/sd/data_entries/"):
-                os.remove("/sd/data_entries/" + file)
-            #os.rmdir("/sd/data_entries")
-        if "sent_data" in os.listdir("/sd/"):
-            for file in os.listdir("/sd/sent_data/"):
-                os.remove("/sd/sent_data/" + file)
-            #os.rmdir("/sd/sent_data")
-        if "error_log.txt" in os.listdir("/sd/"):
-            os.remove("/sd/error_log.txt")
-        print("DONE")
+        yesno = input("Delete all data? (y/n) ")
+        if yesno == "y" :
+            print("REMOVING ALL DATA")
+            if "data_entries" in os.listdir("/sd/"):
+                for file in os.listdir("/sd/data_entries/"):
+                    os.remove("/sd/data_entries/" + file)
+                #os.rmdir("/sd/data_entries")
+            if "sent_data" in os.listdir("/sd/"):
+                for file in os.listdir("/sd/sent_data/"):
+                    os.remove("/sd/sent_data/" + file)
+                #os.rmdir("/sd/sent_data")
+            if "error_log.txt" in os.listdir("/sd/"):
+                os.remove("/sd/error_log.txt")
+            print("DONE")
+        elif yesno == "n":
+            pass
+        else:
+            logger.warning("Please enter a valid command.")
+            return
+            
     elif c == "12":
-        from Drivers.SPI_SD import print_directory
-        print("Listing All Unsent Files...")
-        print(print_directory("/sd/data_entries/"))
-        print("DONE")
-
+        # print every unsent datafile
+        logger.info("printing unsent data")
+        try:
+            files = os.listdir("/sd/data_entries/")
+            for file in files :
+                with open("/sd/data_entries/" + file, "r") as fd:
+                    print(fd.readline() )
+            print("DONE")
+        except OSError:
+            logger.warning("SD Chip not mounted.\n Files not available.")
+            return
+        
     # Ensure Future Alarm is Set BEFORE completely shutting down.
     elif c == "13":
         print("Setting Next Alarm...")
@@ -251,11 +265,7 @@ if __name__ == '__main__':
     while ADMIN_FLAG:
         admincmd(input())
 
-    # while True:
-    #     if ADMIN_IO.value:
     gc.collect()
     logger.info("DEVICE IN NORMAL MODE")
     exec(open('./main.py').read())
 
-    #     else:
-    #         admincmd(input())
