@@ -225,6 +225,7 @@ def admincmd(c):
             
     elif c == "12":
         # print every unsent datafile
+        import Drivers.SPI_SD
         logger.info("printing unsent data")
         try:
             files = os.listdir("/sd/data_entries/")
