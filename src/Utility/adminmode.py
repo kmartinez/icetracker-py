@@ -6,51 +6,25 @@ from time import sleep
 from config import *
 import gc
 
-print("Setting up Serial Comms Connections\n")
+print("importing drivers for tmp and RTC\n")
 # from Drivers.SPI_SD import *
-print("Setting up I2Cs\n")
 from Drivers.TMP117 import *
 from Drivers.RTC import *
-# from Drivers.Accelerometer import *
-from Drivers.ADXL import *
-print("Done\n")
-# print("Setting up UARTs\n")
-# worth putting a try catch block in one instance here
+print("importing PSU BatV and DGPS\n")
 from Drivers.PSU import *
-# from Drivers.SWARM import *
 from Drivers.DGPS import *
-# print("Done\n")
 from Drivers.BATV import *
 from Drivers.I2C_Devices import *
-
+import sys
 # pin_ip = AnalogIn(board.A3)
 ADMIN_FLAG = False
-
-def calibrate_offset():
-    """Calibrates offset by populating once
-
-    Returns:
-        float: atan of calibrated offset to one slope
-    """
-    ADXL_343.offset = (0,0,0)
-    x = ADXL_343.raw_x
-    y = ADXL_343.raw_y
-    z = ADXL_343.raw_z
-
-    ADXL_343.offset = (
-        round(-x / 8),
-        round(-y / 8),
-        round(-(z - 250) / 8), 
-    )
-    return ADXL_343.offset
 
 def diskfree():
     info = os.statvfs("/sd")
     return(info[0] * info[3])
-    print(f"bytes free: ",diskfree())   # redundant
-
+    
 def print_data_entries():
-    """ Check if directory exists """
+    """ Check data dir exists """
     PATH = "/sd/data_entries"
     
     try:
@@ -58,34 +32,20 @@ def print_data_entries():
             print(os.listdir(PATH))
     except BaseException:
         print("Directory doesn't exist, create one.")
-        # os.mkdir(PATH) # stuck in read-only mode so won't work
+        # os.mkdir(PATH) # stuck in read-only mode so won't work???
         pass
-
-    """ Nodes could have been damaged due to using the wrong polarity? """
-# def voltage_readings(pin):
-#     global lc7 
-#     # TODO: cannot use this sensor, maybe faulty? Sensor will be replaced with the same
-#     # input method used previously with a couple of resistors in the form of a potential divider.
-#     # Will be reading the inputs via an ADC input, just need to decide on the actual pin to use.
-#     """ DEPRECATED AT THE MOMENT """
-#     # try:
-#     # print("Battery Voltage: %0.3fV" % (1+lc7.cell_voltage))
-#     # print("Battery Percentage: %0.1F %%" %lc7.cell_percent)
-#     # except BaseException:
-#     #     print("Sensor not connected.")
-#     #     pass
-#     # return ("Vbat: {.2f}V".format((pin_ip.value * 3.3) / 65536))
-#     """ BAT V readings are inconsistent """
-#     print((pin.value * 3.3) / 65536)
 
 def read_bat_voltage():
     enable_BATV()
-    sleep(3)
+    # allow cap charge up
+    sleep(0.5)
     # return round(((BAT_V.value * 5) / 65536 - 0.1), 2)
-    return BAT_VOLTS.battery_voltage(BAT_V)
+    v = BAT_VOLTS.battery_voltage(BAT_V)
+    # should disable batv here???
+    return v
 
 def gps_uart():
-    print("Checking UART connection")
+    print("Checking RTCM connection")
     # RTCM3_UART = busio.UART(board.TX, board.RX, baudrate=115200, receiver_buffer_size=2048)
     # ''' GPS RTCM3 UART '''
     count = 5
@@ -96,7 +56,7 @@ def gps_uart():
                 print(RTCM3_UART.readline())
                 count -= 1
             else:
-                print("Nothing in Buffer")
+                print("Nothing in Buffer") # should say no rtcm messgread ???
     except BaseException:
         print("GPS not detected")
         pass
@@ -105,20 +65,14 @@ def gps_i2c():
     count = 1
     while count > 0:
         GPS_DEVICE.update()
-        # print(gps.readline())
-        # if gps.has_3d_fix:
-        # if "$GNGGA" in gps.nmea_sentence or "$GNZDA" in gps.nmea_sentence:
-        # if GPS_DEVICE.nmea_sentence is None:
-        #     # print("Nothing yet")
-        #     continue
+
         if GPS_DEVICE.nmea_sentence is not None:
             if "$GNGGA" in GPS_DEVICE.nmea_sentence:
                 # GPS_DEVICE.update()
-                print("====================")
-                print("I2C GPS - GNGGA")
+                print("I2C GPS - GNGGA received")
                 print(GPS_DEVICE.nmea_sentence)
                 # print(GPS_DEVICE.readline())
-            #     print("====================")
+            # WE DONT USE ZDA SO THIS CAN BE DELETED???
             if "$GNZDA" in GPS_DEVICE.nmea_sentence:
                     # GPS_DEVICE.update()
                 print("====================")
@@ -147,7 +101,7 @@ def gps_i2c():
     #     data.split("$")
 
 def radio_test():
-    print("Checking XBee Radio Uart connection")
+    print("Read (10x) XBee Radio Uart\n")
     # from Drivers.Radio import *
     import Drivers.Radio
 
@@ -169,24 +123,31 @@ def radio_test():
 def temperature_sensor(): # uses board.SCL and board.SDA
     print(TMP_117.get_temperature())
 
-def accelerometer_slope():
-    xoff, yoff = ADXL_343.calib_accel()
-    print(ADXL_343.accelerometer_to_slope(xoff,yoff))
-#TODO: 
-# - Check DateTime - RTC
-# - Check SPI Mounted and available Storage
-# - Check that Data exists in SPI storage
-# - Check GPS - I2C and UART
-# - Check Radio 
-# - Check GSM Fona
-# - Check SWARM 
-# - Check Temperature Sensor
-# - Check Accelerometer
-# - Check BatV
+def get_next_alarm_time(curr_hr, curr_min):
+    next_hr = None
+    next_min = None
+
+    for i in WAKE_UP_WINDOW_MINS:
+        if (i > curr_min):
+            next_min = i
+            break
+    if next_min is None:
+        next_min = WAKE_UP_WINDOW_MINS[0]
+        # Current time is above last minute time, so we need to set for the next hr
+        for i in WAKE_UP_WINDOW_HRS:
+            if (i > curr_hr):
+                next_hr = i
+                break
+        if next_hr is None:
+            next_hr = WAKE_UP_WINDOW_HRS[0]
+    else:
+        next_hr = curr_hr
+    
+    return (next_hr, next_min)
 
 def admin_menu():
-    print("ADMIN MODE ACCESSED\n")
-    print("Choose one of the following:\n")
+
+    print("Admin mode - Choose:\n")
     print("1\tDate/Time")
     print("2\tSPI SD Flash Chip")
     print("3\tAvailable Storage")
@@ -196,8 +157,10 @@ def admin_menu():
     print("7\tXBee Radio - UART")
     print("8\tTemperature - TMP117")
     print("9\tBatV")
-    print("10\tAccelerometer Slope - ADXL343")
-
+    print("11\tDelete all SD data")
+    print("12\tList Unsent Files")
+    print("13\tSystem Shutdown")
+    
     print("Push Button or Enter 0 to exit Admin mode")
 
 def admincmd(c):
@@ -221,11 +184,11 @@ def admincmd(c):
     elif c == "4":
         from Drivers.SPI_SD import print_directory
         print(f"Files on SD Chip: ",print_directory("/sd"))
-    elif c == "5":
-        print("Reading NMEA Messages from I2C Pins on GPS board.")
+    elif c == "6":
+        print("Reading NMEA Messages from GPS (I2c)")
         gps_i2c()
     elif c =="6":
-        print("Reading RTCM3 Messages from UART2 Pins on GPS board.")
+        print("Reading RTCM3 Messages from GOS (UART2)")
         gps_uart()
     elif c == "7":
         print("Testing XBee Radio Module is active.")
@@ -235,11 +198,61 @@ def admincmd(c):
         temperature_sensor()
     elif c == "9":
         print("Battery Voltage: ")
-        enable_BATV()
         print(read_bat_voltage())
     elif c == "10":
         print("Accelerometer Slope:")
         accelerometer_slope()
+    elif c == "11":
+        yesno = input("Delete all data? (y/n) ")
+        if yesno == "y" :
+            print("REMOVING ALL DATA")
+            if "data_entries" in os.listdir("/sd/"):
+                for file in os.listdir("/sd/data_entries/"):
+                    os.remove("/sd/data_entries/" + file)
+                #os.rmdir("/sd/data_entries")
+            if "sent_data" in os.listdir("/sd/"):
+                for file in os.listdir("/sd/sent_data/"):
+                    os.remove("/sd/sent_data/" + file)
+                #os.rmdir("/sd/sent_data")
+            if "error_log.txt" in os.listdir("/sd/"):
+                os.remove("/sd/error_log.txt")
+            print("DONE")
+        elif yesno == "n":
+            pass
+        else:
+            logger.warning("Please enter a valid command.")
+            return
+            
+    elif c == "12":
+        # print every unsent datafile
+        import Drivers.SPI_SD
+        logger.info("printing unsent data")
+        try:
+            files = os.listdir("/sd/data_entries/")
+            for file in files :
+                with open("/sd/data_entries/" + file, "r") as fd:
+                    print(fd.readline() )
+            print("DONE")
+        except OSError:
+            logger.warning("SD Chip not mounted.\n Files not available.")
+            return
+        
+    # Ensure Future Alarm is Set BEFORE completely shutting down.
+    elif c == "13":
+        print("Setting Next Alarm...")
+        
+        (YY,MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
+        logger.info("Current Time: %d:%d", hh, mm)
+        nextwake = get_next_alarm_time(hh, mm)
+
+        RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,nextwake[0],nextwake[1],0,wday,yday,dst]), "daily")
+        logger.info("Next wake time = %d:%d", RTC_DEVICE.alarm1[0][3], RTC_DEVICE.alarm1[0][4])
+        RTC_DEVICE.alarm1_interrupt = True
+
+        print("SHUTTING DOWN...\nSafe to Unplug")
+        sys.exit(0)
+        
+        
     elif c == "0":
         ADMIN_FLAG = False
     else:   
@@ -253,11 +266,7 @@ if __name__ == '__main__':
     while ADMIN_FLAG:
         admincmd(input())
 
-    # while True:
-    #     if ADMIN_IO.value:
     gc.collect()
     logger.info("DEVICE IN NORMAL MODE")
     exec(open('./main.py').read())
 
-    #     else:
-    #         admincmd(input())

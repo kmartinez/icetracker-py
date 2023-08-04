@@ -14,7 +14,7 @@ class GPSData:
     sats: int
     temp: float
     batv: float
-    tilt: tuple
+    #tilt: tuple
 
     def __init__(
         self,
@@ -25,7 +25,7 @@ class GPSData:
         sats: int,
         temp: float,
         batv: float,
-        tilt: tuple
+        #tilt: tuple
         ):
         self.timestamp = timestamp
         self.latitude = str(latitude)
@@ -34,7 +34,7 @@ class GPSData:
         self.sats = sats
         self.temp = temp
         self.batv = batv
-        self.tilt = tilt
+        #self.tilt = tilt
 
     def to_json(self) -> str:
         """Serializes self to json and then to bytes ready to send over radio
@@ -50,7 +50,7 @@ class GPSData:
             "sats": self.sats,
             "temp": self.temp,
             "batv": self.batv,
-            "tilt": self.tilt
+            #"tilt": self.tilt
         }
         output = json.dumps(data)
 

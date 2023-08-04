@@ -127,14 +127,17 @@ async def receive_packet() -> RadioPacket:
         await UART.async_read_until_forever(bytes([0x80,0x80]))
         logger.info("Packet marker received")
         size = await UART.async_read_forever(4)
-        print(size)
-        logger.debug(f"PACKET_SIZE: {binascii.hexlify(size)}")
+        # print(size)
+        logger.debug(f"PACKET_SIZE_RAW: {binascii.hexlify(size)}")
         size = struct.unpack('I', size)[0]
+        logger.debug(f"PACKET_SIZE: {size}")
         # print(size)
         if size == 0 or size > 1000:
             logger.warning("Radio received invalid packet size!")
             continue
+        logger.debug("PACKET_READ_START")
         data = await UART.async_read(size)
+        logger.debug("PACKET_READ_END")
         #debug("RAWDATA:", data)
         if data is None or len(data) < size:
             logger.warning("Received packet size did not match actual packet size!")

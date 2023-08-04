@@ -9,17 +9,19 @@ import board
 from Drivers.AsyncUART import AsyncUART
 import binascii
 import gc
+import config
+import random
 
 logger = logging.getLogger("GPS")
 
 class DGPS(glactracker_gps.GPS_GtopI2C):
-    def __init__(self, i2c: I2C, rtcm_uart: AsyncUART, debug: bool = False) -> None:
-        super().__init__(i2c, address=0x42, debug=False)
+    def __init__(self, i2c: I2C, rtcm_uart: AsyncUART, debug: bool = False, timeout = 0) -> None:
+        super().__init__(i2c, address=0x42, debug=debug, timeout=timeout)
         self.rtcm_uart = rtcm_uart
     
     def rtk_calibrate(self, rtcm3_data: bytes):
         logger.debug(f"CALIBRATING_RTCM3_BYTES: {binascii.hexlify(rtcm3_data)}")
-        print(len(binascii.hexlify(rtcm3_data)))
+        #print(len(binascii.hexlify(rtcm3_data)))
         self.rtcm_uart.write(rtcm3_data)
 
     def to_dict(self):
@@ -34,19 +36,39 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
             "REMAINING_BUFFER_SIZE": self.in_waiting
         }
     
+    def update(self):
+        if (DEBUG["FAKE_DATA"]):
+            #Fake data
+            logger.warning("Fake data mode is on! No real GPS data will be used on this device!!!!")
+            self.latitude = DecimalNumber("59.3")
+            self.longitude = DecimalNumber("-1.2")
+            self.altitude_m = 5002.3
+            self.timestamp_utc = localtime(time())
+            self.fix_quality = 4
+            self.horizontal_dilution = "0.01"
+            self.satellites = "9"
+            if random.randrange(15) < 1:
+                return True
+            else:
+                return False
+        else:
+            return super().update()
+
+    
     def update_with_all_available(self):
         logger.info("read GPS")
 
         gc.collect()
-        print("Point 5 Available memory: {} bytes".format(gc.mem_free()))
+        logger.log(5, "Point 5 Available memory: {} bytes".format(gc.mem_free()))
 
         device_updated: bool = self.update() #Potentially garbage line so we continue anyway even if it doesn't actually work
         # normally using 'not' self.update() to be able to read New incoming nmea sentences.
         # wait until new NMEA received from GPS
         while self.update():
-            print(device_updated)
+            #print(device_updated)
             device_updated = True #Performs as many GPS updates as there are NMEA strings available in UART
-        
+        if device_updated:
+            logger.debug("GPS_UPDATED")
         if (DEBUG["FAKE_DATA"]):
             #Fake data
             logger.warning("Fake data mode is on! No real GPS data will be used on this device!!!!")
@@ -66,7 +88,7 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
         if self.fix_quality == 4:
             logger.info("GPS fix")
             gc.collect()
-            print("Point 6 Available memory: {} bytes".format(gc.mem_free()))
+            logger.log(5, "Point 6 Available memory: {} bytes".format(gc.mem_free()))
             return device_updated
         else:
             logger.info("GPS quality is currently insufficient")
@@ -80,12 +102,13 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
         """
         # Read UART for newline terminated data - produces bytestr
         logger.info("Retrieving RTCM3 from UART")
-        RTCM3_UART.reset_input_buffer()
-        await RTCM3_UART.aysnc_read_RTCM3_packet_forever() #Garbled maybe
-        data = bytearray()
-        for i in range(5):
-            d = await RTCM3_UART.aysnc_read_RTCM3_packet_forever()
-            data += d
+        # RTCM3_UART.reset_input_buffer()
+        # await RTCM3_UART.aysnc_read_RTCM3_packet_forever() #Garbled maybe
+        # data = bytearray()
+        # for i in range(5):
+        #     d = await RTCM3_UART.aysnc_read_RTCM3_packet_forever()
+        #     data += d
+        data = await RTCM3_UART.aysnc_read_RTCM3_packet_forever()
         logger.debug(f"RTCM3_BYTES: {binascii.hexlify(bytes(data))}")
         logger.info("RTCM3 obtained from UART")
         return bytes(data)
