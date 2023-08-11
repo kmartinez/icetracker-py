@@ -1,4 +1,4 @@
-# import glactracker_gps
+# core GPS tasks and class
 import glactracker_gps 
 from busio import UART
 import adafruit_logging as logging
@@ -20,7 +20,8 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
         self.rtcm_uart = rtcm_uart
     
     def rtk_calibrate(self, rtcm3_data: bytes):
-        logger.debug(f"CALIBRATING_RTCM3_BYTES: {binascii.hexlify(rtcm3_data)}")
+        logger.debug("calibrating GPS with RTCM")
+        #logger.debug(f"CALIBRATING_RTCM3_BYTES: {binascii.hexlify(rtcm3_data)}")
         #print(len(binascii.hexlify(rtcm3_data)))
         self.rtcm_uart.write(rtcm3_data)
 
@@ -56,10 +57,10 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
 
     
     def update_with_all_available(self):
-        logger.info("read GPS")
+        logger.info("GPS: update")
 
-        gc.collect()
-        logger.log(5, "Point 5 Available memory: {} bytes".format(gc.mem_free()))
+        #gc.collect()
+        #logger.log(5, "Point 5 Available memory: {} bytes".format(gc.mem_free()))
 
         device_updated: bool = self.update() #Potentially garbage line so we continue anyway even if it doesn't actually work
         # normally using 'not' self.update() to be able to read New incoming nmea sentences.
@@ -68,7 +69,7 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
             #print(device_updated)
             device_updated = True #Performs as many GPS updates as there are NMEA strings available in UART
         if device_updated:
-            logger.debug("GPS_UPDATED")
+            logger.debug("GPS: UPDATED")
         if (DEBUG["FAKE_DATA"]):
             #Fake data
             logger.warning("Fake data mode is on! No real GPS data will be used on this device!!!!")
@@ -82,16 +83,16 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
         
         logger.debug(f"GPS_DATA: {self.to_dict()}")
 
-        gc.collect()
+        #gc.collect()
 
         # If NMEA received back
         if self.fix_quality == 4:
-            logger.info("GPS fix")
-            gc.collect()
-            logger.log(5, "Point 6 Available memory: {} bytes".format(gc.mem_free()))
+            logger.info("GPS: fix4")
+            #gc.collect()
+            #logger.log(5, "Point 6 Available memory: {} bytes".format(gc.mem_free()))
             return device_updated
         else:
-            logger.info("GPS quality is currently insufficient")
+            logger.info("GPS: no fix yet")
             return False
     
     async def get_rtcm3_message(self):
@@ -110,7 +111,7 @@ class DGPS(glactracker_gps.GPS_GtopI2C):
         #     data += d
         data = await RTCM3_UART.aysnc_read_RTCM3_packet_forever()
         logger.debug(f"RTCM3_BYTES: {binascii.hexlify(bytes(data))}")
-        logger.info("RTCM3 obtained from UART")
+        logger.info("RTCM3 obtained from GPS UART")
         return bytes(data)
 
 RTCM3_UART: AsyncUART = AsyncUART(board.D1, board.D0, baudrate=115200, receiver_buffer_size=2048)
