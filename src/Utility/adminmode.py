@@ -160,7 +160,7 @@ def admin_menu():
     print("7\tXBee Radio - UART")
     print("8\tTemperature - TMP117")
     print("9\tBatV")
-    print("11\tDelete all SD data")
+    print("10\tDelete all SD data")
     
     print("Push Button or Enter 0 to exit Admin mode")
 
@@ -201,11 +201,16 @@ def admincmd(c):
         print("Battery Voltage: ")
         enable_BATV()
         print(read_bat_voltage())
+    # elif c == "10":
+    #     print("Accelerometer Slope:")
+    #     accelerometer_slope()
     elif c == "10":
-        print("Accelerometer Slope:")
-        accelerometer_slope()
-    elif c == "11":
         print("REMOVING ALL DATA")
+        from Drivers.SPI_SD import mount_SD, SPI_SD, CS
+        try:
+            mount_SD(SPI_SD,CS)
+        except ImportError:
+            print("Can't Import Driver")
         if "data_entries" in os.listdir("/sd/"):
             for file in os.listdir("/sd/data_entries/"):
                 os.remove("/sd/data_entries/" + file)
