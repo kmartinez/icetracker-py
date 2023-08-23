@@ -86,10 +86,10 @@ def gps_i2c():
                 print(GPS_DEVICE.nmea_sentence)
                 # print(GPS_DEVICE.readline())
             #     print("====================")
-            if "$GNZDA" in GPS_DEVICE.nmea_sentence:
+            if "$GNRMC" in GPS_DEVICE.nmea_sentence:
                     # GPS_DEVICE.update()
                 print("====================")
-                print("I2C GPS - GNZDA")
+                print("I2C GPS - GNRMC")
                 print(GPS_DEVICE.nmea_sentence)
                 # print(GPS_DEVICE.readline())
             # print(GPS_DEVICE.readline())

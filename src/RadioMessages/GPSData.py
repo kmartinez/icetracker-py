@@ -44,8 +44,8 @@ class GPSData:
         """
         data = {
             "timestamp": self.timestamp.isoformat(),
-            "latitude": self.latitude,
-            "longitude": self.longitude,
+            "latitude": self.latitude[0:12],
+            "longitude": self.longitude[0:13],
             "altitude": self.altitude,
             "sats": self.sats,
             "temp": self.temp,
