@@ -118,4 +118,8 @@ if __name__ == "__main__":
             #time.sleep(2)
     
     send_and_delete_json_payload(http_payload, payload_paths)
+
+    logger.info("Disconnecting from Network")
+    network.disconnect()
+
     shutdown()
