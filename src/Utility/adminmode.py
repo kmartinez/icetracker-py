@@ -106,8 +106,7 @@ def radio_test():
     import Drivers.Radio
 
     try:
-        # RADIO_UART = busio.UART(board.D11, board.D10, baudrate=9600, receiver_buffer_size=2048) 
-        ''' Radio UART for communications'''
+        ''' read Radio UART'''
         counter = 10
         while counter > 0:
             if Drivers.Radio.UART is not None:
@@ -116,7 +115,7 @@ def radio_test():
                 print("Nothing in Buffer")
             counter -= 1
     except BaseException:
-        print("Radio not connected.\n Check pins and SMA antenna connections.")
+        print("Radio not connected?\n")
         pass
 
 
@@ -147,18 +146,18 @@ def get_next_alarm_time(curr_hr, curr_min):
 
 def admin_menu():
 
-    print("Admin mode - Choose:\n")
+    print("Admin mode:\n")
     print("1\tDate/Time")
-    print("2\tSPI SD Flash Chip")
+    print("2\tmount SD Flash")
     print("3\tAvailable Storage")
-    print("4\t/Files on Chip")
+    print("4\tlist Files on SD")
     print("5\tGPS I2C NMEA")
     print("6\tGPS UART RTCM3")
     print("7\tXBee Radio - UART")
-    print("8\tTemperature - TMP117")
+    print("8\tTemperature")
     print("9\tBatV")
     print("11\tDelete all SD data")
-    print("12\tList Unsent Files")
+    print("12\tPrint Unsent Files")
     print("13\tSystem Shutdown")
     
     print("Push Button or Enter 0 to exit Admin mode")
@@ -188,7 +187,7 @@ def admincmd(c):
         print("Reading NMEA Messages from GPS (I2c)")
         gps_i2c()
     elif c =="6":
-        print("Reading RTCM3 Messages from GOS (UART2)")
+        print("Reading RTCM3 Messages from GPS (UART2)")
         gps_uart()
     elif c == "7":
         print("Testing XBee Radio Module is active.")
