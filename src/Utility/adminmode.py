@@ -68,18 +68,14 @@ def gps_i2c():
 
         if GPS_DEVICE.nmea_sentence is not None:
             if "$GNGGA" in GPS_DEVICE.nmea_sentence:
-                # GPS_DEVICE.update()
                 print("I2C GPS - GNGGA received")
                 print(GPS_DEVICE.nmea_sentence)
-                # print(GPS_DEVICE.readline())
-            # WE DONT USE ZDA SO THIS CAN BE DELETED???
-            if "$GNZDA" in GPS_DEVICE.nmea_sentence:
-                    # GPS_DEVICE.update()
+
+            if "$GNRMC" in GPS_DEVICE.nmea_sentence:
                 print("====================")
-                print("I2C GPS - GNZDA")
+                print("I2C GPS - GNRMC")
                 print(GPS_DEVICE.nmea_sentence)
-                # print(GPS_DEVICE.readline())
-            # print(GPS_DEVICE.readline())
+
             print("====================")
             count -= 1
             try:
@@ -88,17 +84,7 @@ def gps_i2c():
                 print("Nothing to show")
                 print("exit")
             print("====================\n")
-        # RTCM3_UART.update()
-        # print(RTCM3_UART.readline())
-        # print(gps_uart.readline().decode())
-        # if "$GNGGA" in gps_uart.readline().decode():
-        #     print("UART GPS")
-        #     print(gps_uart.readline().decode())
-        #     print("====================")
-        # time.sleep(1)
-    # if "$G" in data: 
-    # # data.decode()
-    #     data.split("$")
+
 
 def radio_test():
     print("Read (10x) XBee Radio Uart\n")
