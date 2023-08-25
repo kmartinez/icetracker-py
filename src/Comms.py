@@ -35,7 +35,7 @@ def send_and_delete_json_payload(http_payload, payload_paths):
 
     logger.info("Sending HTTP Request!")
     logger.debug(f"HTTP_REQUEST_DATA: {http_payload}")
-    response = requests.post("http://iotgate.ecs.soton.ac.uk/myapp", json=http_payload)
+    response = requests.post("http://marc.ecs.soton.ac.uk/tracker-in", json=http_payload)
     logger.info("Request complete!")
 
     logger.debug(f"HTTP_STATUS: {response.status_code}")
@@ -118,4 +118,6 @@ if __name__ == "__main__":
             #time.sleep(2)
     
     send_and_delete_json_payload(http_payload, payload_paths)
+    logger.info("Disconnecting from Network")
+    network.disconnect()
     shutdown()
