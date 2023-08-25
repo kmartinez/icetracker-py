@@ -202,6 +202,11 @@ def admincmd(c):
         yesno = input("Delete all data? (y/n) ")
         if yesno == "y" :
             print("REMOVING ALL DATA")
+            from Drivers.SPI_SD import mount_SD, SPI_SD, CS
+            try:
+                mount_SD(SPI_SD,CS)
+            except ImportError:
+                print("Can't Import Driver")
             if "data_entries" in os.listdir("/sd/"):
                 for file in os.listdir("/sd/data_entries/"):
                     os.remove("/sd/data_entries/" + file)
@@ -221,7 +226,11 @@ def admincmd(c):
             
     elif c == "11":
         # print every unsent datafile
-        import Drivers.SPI_SD
+        from Drivers.SPI_SD import mount_SD, SPI_SD, CS
+        try:
+            mount_SD(SPI_SD,CS)
+        except ImportError:
+            print("Can't Import Driver")
         logger.info("printing unsent data")
         try:
             files = os.listdir("/sd/data_entries/")
