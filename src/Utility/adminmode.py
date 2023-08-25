@@ -156,9 +156,9 @@ def admin_menu():
     print("7\tXBee Radio - UART")
     print("8\tTemperature")
     print("9\tBatV")
-    print("11\tDelete all SD data")
-    print("12\tPrint Unsent Files")
-    print("13\tSystem Shutdown")
+    print("10\tDelete all SD data")
+    print("11\tPrint Unsent Files")
+    print("12\tSystem Shutdown")
     
     print("Push Button or Enter 0 to exit Admin mode")
 
@@ -199,9 +199,6 @@ def admincmd(c):
         print("Battery Voltage: ")
         print(read_bat_voltage())
     elif c == "10":
-        print("Accelerometer Slope:")
-        accelerometer_slope()
-    elif c == "11":
         yesno = input("Delete all data? (y/n) ")
         if yesno == "y" :
             print("REMOVING ALL DATA")
@@ -222,7 +219,7 @@ def admincmd(c):
             logger.warning("Please enter a valid command.")
             return
             
-    elif c == "12":
+    elif c == "11":
         # print every unsent datafile
         import Drivers.SPI_SD
         logger.info("printing unsent data")
@@ -237,7 +234,7 @@ def admincmd(c):
             return
         
     # Ensure Future Alarm is Set BEFORE completely shutting down.
-    elif c == "13":
+    elif c == "12":
         print("Setting Next Alarm...")
         
         (YY,MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
