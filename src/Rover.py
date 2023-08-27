@@ -163,8 +163,8 @@ async def handle_gps_updates():
                 logger.info("File write complete")
                 fix4_reading_saved = True
 
-                gc.collect() # NEEDED??? and next line???
-                logger.debug("Point 7 Available memory: {} bytes".format(gc.mem_free()))
+                # gc.collect() # NEEDED??? and next line???
+                # logger.debug("Point 7 Available memory: {} bytes".format(gc.mem_free()))
         logger.log(5, "GPS_TASK_SLEEPING")
         await asyncio.sleep(0.5) # CAN BE 1s ???
     
@@ -215,8 +215,8 @@ async def transmit_data():
 
 if __name__ == "__main__":
     try:
-        gc.collect()
-        logger.debug("Point 2 Available memory: {} bytes".format(gc.mem_free()))
+        # gc.collect()
+        # logger.debug("Point 2 Available memory: {} bytes".format(gc.mem_free()))
         asyncio.run(asyncio.wait_for_ms(asyncio.gather(radio_receive_loop(), transmit_data(), handle_acks(), handle_rtcm3_packets(), handle_gps_updates(), clock_calibrator(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
         # asyncio.run(asyncio.wait_for_ms(asyncio.gather(rover_loop()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
         logger.info("ROVER_COMPLETE")

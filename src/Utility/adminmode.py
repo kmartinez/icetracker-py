@@ -68,18 +68,14 @@ def gps_i2c():
 
         if GPS_DEVICE.nmea_sentence is not None:
             if "$GNGGA" in GPS_DEVICE.nmea_sentence:
-                # GPS_DEVICE.update()
                 print("I2C GPS - GNGGA received")
                 print(GPS_DEVICE.nmea_sentence)
-                # print(GPS_DEVICE.readline())
-            # WE DONT USE ZDA SO THIS CAN BE DELETED???
-            if "$GNZDA" in GPS_DEVICE.nmea_sentence:
-                    # GPS_DEVICE.update()
+
+            if "$GNRMC" in GPS_DEVICE.nmea_sentence:
                 print("====================")
-                print("I2C GPS - GNZDA")
+                print("I2C GPS - GNRMC")
                 print(GPS_DEVICE.nmea_sentence)
-                # print(GPS_DEVICE.readline())
-            # print(GPS_DEVICE.readline())
+
             print("====================")
             count -= 1
             try:
@@ -88,17 +84,7 @@ def gps_i2c():
                 print("Nothing to show")
                 print("exit")
             print("====================\n")
-        # RTCM3_UART.update()
-        # print(RTCM3_UART.readline())
-        # print(gps_uart.readline().decode())
-        # if "$GNGGA" in gps_uart.readline().decode():
-        #     print("UART GPS")
-        #     print(gps_uart.readline().decode())
-        #     print("====================")
-        # time.sleep(1)
-    # if "$G" in data: 
-    # # data.decode()
-    #     data.split("$")
+
 
 def radio_test():
     print("Read (10x) XBee Radio Uart\n")
@@ -106,8 +92,7 @@ def radio_test():
     import Drivers.Radio
 
     try:
-        # RADIO_UART = busio.UART(board.D11, board.D10, baudrate=9600, receiver_buffer_size=2048) 
-        ''' Radio UART for communications'''
+        ''' read Radio UART'''
         counter = 10
         while counter > 0:
             if Drivers.Radio.UART is not None:
@@ -116,7 +101,7 @@ def radio_test():
                 print("Nothing in Buffer")
             counter -= 1
     except BaseException:
-        print("Radio not connected.\n Check pins and SMA antenna connections.")
+        print("Radio not connected?\n")
         pass
 
 
@@ -147,19 +132,19 @@ def get_next_alarm_time(curr_hr, curr_min):
 
 def admin_menu():
 
-    print("Admin mode - Choose:\n")
+    print("Admin mode:\n")
     print("1\tDate/Time")
-    print("2\tSPI SD Flash Chip")
+    print("2\tmount SD Flash")
     print("3\tAvailable Storage")
-    print("4\t/Files on Chip")
+    print("4\tlist Files on SD")
     print("5\tGPS I2C NMEA")
     print("6\tGPS UART RTCM3")
     print("7\tXBee Radio - UART")
-    print("8\tTemperature - TMP117")
+    print("8\tTemperature")
     print("9\tBatV")
-    print("11\tDelete all SD data")
-    print("12\tList Unsent Files")
-    print("13\tSystem Shutdown")
+    print("10\tDelete all SD data")
+    print("11\tPrint Unsent Files")
+    print("12\tSystem Shutdown")
     
     print("Push Button or Enter 0 to exit Admin mode")
 
@@ -188,7 +173,7 @@ def admincmd(c):
         print("Reading NMEA Messages from GPS (I2c)")
         gps_i2c()
     elif c =="6":
-        print("Reading RTCM3 Messages from GOS (UART2)")
+        print("Reading RTCM3 Messages from GPS (UART2)")
         gps_uart()
     elif c == "7":
         print("Testing XBee Radio Module is active.")
@@ -200,12 +185,14 @@ def admincmd(c):
         print("Battery Voltage: ")
         print(read_bat_voltage())
     elif c == "10":
-        print("Accelerometer Slope:")
-        accelerometer_slope()
-    elif c == "11":
         yesno = input("Delete all data? (y/n) ")
         if yesno == "y" :
             print("REMOVING ALL DATA")
+            from Drivers.SPI_SD import mount_SD, SPI_SD, CS
+            try:
+                mount_SD(SPI_SD,CS)
+            except ImportError:
+                print("Can't Import Driver")
             if "data_entries" in os.listdir("/sd/"):
                 for file in os.listdir("/sd/data_entries/"):
                     os.remove("/sd/data_entries/" + file)
@@ -223,9 +210,13 @@ def admincmd(c):
             logger.warning("Please enter a valid command.")
             return
             
-    elif c == "12":
+    elif c == "11":
         # print every unsent datafile
-        import Drivers.SPI_SD
+        from Drivers.SPI_SD import mount_SD, SPI_SD, CS
+        try:
+            mount_SD(SPI_SD,CS)
+        except ImportError:
+            print("Can't Import Driver")
         logger.info("printing unsent data")
         try:
             files = os.listdir("/sd/data_entries/")
@@ -238,7 +229,7 @@ def admincmd(c):
             return
         
     # Ensure Future Alarm is Set BEFORE completely shutting down.
-    elif c == "13":
+    elif c == "12":
         print("Setting Next Alarm...")
         
         (YY,MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
