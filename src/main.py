@@ -75,13 +75,12 @@ if __name__ == "__main__":
             logger.info("WATCHDOG_ENABLED")
     
     try:
-        #Normal boot procedure ??? need to time this listdir???
+        #Normal boot
         if "data_entries" not in os.listdir("/sd/"):
             os.mkdir("/sd/data_entries")
         if "sent_data" not in os.listdir("/sd/"):
             os.mkdir("/sd/sent_data")
         
-        logger.info("not COMMS time")  # should be 2 elses down??
         if DEVICE_ID >= 100:
             if RTC_DEVICE.datetime[3] in COMMS_TIME:
                 logger.info('Comms Time')

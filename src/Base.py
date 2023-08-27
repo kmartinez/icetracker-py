@@ -1,8 +1,8 @@
-"""Main code for base stations.
-Creates a scheduler and adds all base station tasks to it
+"""Main code for base stations Aug 2023
+Creates a scheduler and adds all base station tasks
 """
 
-from Drivers.PSU import * #EVERYTHING FROM THIS IS READONLY (you can use write functions, but cannot actually modify a variable)
+from Drivers.PSU import * #EVERYTHING FROM THIS IS READONLY
 from config import *
 from Drivers.RTC import *
 from RadioMessages.GPSData import *
@@ -24,29 +24,25 @@ from microcontroller import watchdog
 import adafruit_logging as logging
 import supervisor
 
-
-
 logger = logging.getLogger("BASE")
 
-#this is a global variable so can still get the data even if the rover loop times out
+#keep track of completed rovers
 finished_rovers: dict[int, bool] = {}
 rtcm3_rovers: dict[int, bool] = {}
 
 async def clock_calibrator():
-    """Task that waits until the GPS has a timestamp and then calibrates the RTC using GPS time
+    """waits until the GPS has timestamp then writes to RTC
     """
-    gc.collect()
     while GPS_DEVICE.timestamp_utc is None:
         logger.debug("CLOCK_CALIB waiting")
         GPS_DEVICE.update()
         if GPS_DEVICE.timestamp_utc is not None:
-            # could check if different by 2s???
+            # only valid ts are read so write
             RTC_DEVICE.datetime = GPS_DEVICE.timestamp_utc
         await asyncio.sleep(0.5)
 
 async def feed_watchdog():
-    """Upon being executed by a scheduler, this task will feed the watchdog then yield.
-    Added as a task to the asyncio scheduler by this module's main code.
+    """feeds the watchdog then yields
     """
     while len(finished_rovers) < ROVER_COUNT:
         if not DEBUG["WATCHDOG_DISABLE"]:
@@ -65,10 +61,10 @@ async def read_sensors():
     with open("/sd/data_entries/" + str(DEVICE_ID) + "-" + datetime.fromtimestamp(time.mktime(RTC_DEVICE.datetime)).isoformat().replace(":", "_"), "w") as file:
         logger.debug(f"WRITING_DATA_TO_FILE: {data}")
         file.write(json.dumps(data) + '\n')
-    logger.debug("BASE: FINISHED READING TEMP AND BATV")
+    logger.debug("TEMP AND BATV data saved")
 
 async def rtcm3_loop():
-    """Task that continuously broadcasts available RTCM3 correction data.
+    """continuously broadcasts available RTCM3 correction data.
     """
     global rtcm3_rovers
     rtcm3_pause = False
@@ -88,9 +84,9 @@ async def rtcm3_loop():
             radio.broadcast_data(PacketType.RTCM3, rtcm3_data)
 
 async def rover_data_loop():
-    """Task that continuously processes all incoming rover data until timeout or all rovers are finished.
+    """continuously process all incoming rover data until timeout or all rovers are finished.
     """
-    while len(finished_rovers) < ROVER_COUNT: #While there are any Nones in rover_data
+    while len(finished_rovers) < ROVER_COUNT: #While there are any Nones in finished list
         try:
             logger.info("Waiting for a radio packet")
             packet = await radio.receive_packet()
@@ -105,24 +101,12 @@ async def rover_data_loop():
             continue
 
         if packet.type == PacketType.NMEA:
-            logger.info("Received radio packet is GPS data",)
+            logger.info("Radio received GPS data from a rover",)
             if len(packet.payload) < 0:
                 logger.warning("Empty GPS data received")
                 continue
             data = GPSData.from_json(packet.payload.decode('utf-8'))
-            # print(data)
-            # enable_BATV()
-            # time.sleep(0.5)
-            # GPS_DEVICE.update()
-            #
-            # base_data = GPSData(
-            #     DEVICE_ID,
-            # # datetime.fromtimestamp(time.mktime(GPS_DEVICE.timestamp_utc)).isoformat(), # for GPS timing data
-            #     datetime.fromtimestamp(time.mktime(RTC_DEVICE.datetime)),
-            #     TMP_117.get_temperature(),
-            #     BAT_VOLTS.battery_voltage(BAT_V),
-            #     json.loads(json.dumps(data)))
-            print(data)
+            #print(data)
             rtcm3_rovers[packet.sender] = True
             with open("/sd/data_entries/" + str(packet.sender) + "-" + data["timestamp"].replace(":", "_"), "w") as file:
                 data['rover_id'] = packet.sender
@@ -156,7 +140,6 @@ if __name__ == "__main__":
     # Send ACK to rover
     #end
     
-
     try:
         logger.info("Starting async tasks")
         loop.run_until_complete(asyncio.wait_for_ms(asyncio.gather(read_sensors(), clock_calibrator(), rover_data_loop(), rtcm3_loop(), feed_watchdog()), GLOBAL_FAILSAFE_TIMEOUT * 1000))
