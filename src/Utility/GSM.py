@@ -68,24 +68,26 @@ if __name__ == "__main__":
     logger.info("My IP address is: %s", fona.local_ip)
     logger.info("IP lookup adafruit.com: %s", fona.get_host_by_name("adafruit.com"))
     #response = requests.get(TEXT_URL)
-    response = requests.post("http://iotgate.ecs.soton.ac.uk/myapp", json=[{
-        "test1": "asdfasdfasdfasdf",
-        "test2": "asdfasdfasdfasdf",
-        "test3": "asdfasdfasdfasdf",
-        "test4": "asdfasdfasdfasdf",
-        "test5": "asdfasdfasdfasdf",
-        "test6": "asdfasdfasdfasdf",
-        "test11": "asdfasdfasdfasdf",
-        "test22": "asdfasdfasdfasdf",
-        "test33": "asdfasdfasdfasdf",
-        "test44": "asdfasdfasdfasdf",
-        "test55": "asdfasdfasdfasdf",
-        "test66": "asdfasdfasdfasdf",
-        "test111": "asdfasdfasdfasdf",
-        "test212": "asdfasdfasdfasdf",
-        "test313": "asdfasdfasdfasdf",
-        "test414": "asdfasdfasdfasdf",
-        "test515": "asdfasdfasdfasdf",
-        "test616": "asdfasdfasdfasdf",
-    }])
-    logger.info(f"STATUS: {response.status_code}")
+    while True:
+        requests.set_socket(cellular_socket, fona)
+        response = requests.post("http://iotgate.ecs.soton.ac.uk/postin", json=[{
+            "test1": "asdfasdfasdfasdf",
+            "test2": "asdfasdfasdfasdf",
+            "test3": "asdfasdfasdfasdf",
+            "test4": "asdfasdfasdfasdf",
+            "test5": "asdfasdfasdfasdf",
+            "test6": "asdfasdfasdfasdf",
+            "test11": "asdfasdfasdfasdf",
+            "test22": "asdfasdfasdfasdf",
+            "test33": "asdfasdfasdfasdf",
+            "test44": "asdfasdfasdfasdf",
+            "test55": "asdfasdfasdfasdf",
+            "test66": "asdfasdfasdfasdf",
+            "test111": "asdfasdfasdfasdf",
+            "test212": "asdfasdfasdfasdf",
+            "test313": "asdfasdfasdfasdf",
+            "test414": "asdfasdfasdfasdf",
+            "test515": "asdfasdfasdfasdf",
+            "test616": "asdfasdfasdfasdf",
+        }])
+        logger.info(f"STATUS: {response.status_code}")
