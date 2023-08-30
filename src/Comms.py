@@ -1,14 +1,12 @@
-"""Main code for base stations.
-Creates a scheduler and adds all base station tasks to it
+"""Communications mode for base stations
 """
-
 
 from adafruit_fona.adafruit_fona import FONA
 import adafruit_fona.adafruit_fona_network as network
 import adafruit_fona.adafruit_fona_socket as cellular_socket
 from Drivers.SPI_SD import *
 import time
-from Drivers.PSU import * #EVERYTHING FROM THIS IS READONLY (you can use write functions, but cannot actually modify a variable)
+from Drivers.PSU import * #EVERYTHING FROM THIS IS READONLY
 from config import *
 import json
 import adafruit_requests as requests
@@ -33,13 +31,13 @@ def send_and_delete_json_payload(http_payload, payload_paths):
     logger.debug("CREATING_NEW_SOCKET_FOR_REQUESTS_WORKAROUND")
     requests.set_socket(cellular_socket, fona)
 
-    logger.info("Sending HTTP Request!")
+    logger.info("Sending HTTP POST")
     logger.debug(f"HTTP_REQUEST_DATA: {http_payload}")
     response = requests.post("http://marc.ecs.soton.ac.uk/tracker-in", json=http_payload)
-    logger.info("Request complete!")
+    logger.info("Request complete")
 
     logger.debug(f"HTTP_STATUS: {response.status_code}")
-    # If data ingested correcttly, move files sent from /data_entries/ to /sent_data/
+    # If data ingested correctly, move files sent from /data_entries/ to /sent_data/
     if response.status_code == 200:
         logger.info("HTTP request successful - Removing sent data")
         for path in payload_paths:
@@ -49,7 +47,7 @@ def send_and_delete_json_payload(http_payload, payload_paths):
 
 if __name__ == "__main__":
     if len(os.listdir("/sd/data_entries/")) < 1:
-        logger.warning("No data detected in SD. Not bothering to communicate")
+        logger.warning("No unsent data - Exiting.")
         sys.exit()
 
     logger.info("DISABLING GPS")
@@ -60,14 +58,11 @@ if __name__ == "__main__":
         watchdog.mode = WatchDogMode.RESET
         watchdog.feed()
 
-     # - enable_fona now exists in the adafruit_library
-    # try:
     logger.info("ENABLING GSM COMMS")
 
     fona = FONA(GSM_UART, GSM_RST_PIN, debug=True)
     
     logger.info("FONA initialized")
-    logger.debug("FONA VERSION: fona.version")
 
     network = network.CELLULAR(
         fona, (SECRETS["apn"], SECRETS["apn_username"], SECRETS["apn_password"])
@@ -79,9 +74,9 @@ if __name__ == "__main__":
         failcount += 1
         if failcount > MAX_FAIL_COUNT:
             raise Exception("FONA could not attach")
-        logger.info("Attaching to network...")
+        logger.info("trying to attach to network")
         time.sleep(0.5)
-    logger.info("Attached!")
+    logger.info("Attached")
 
     failcount = 0
     while not network.is_connected:
@@ -91,7 +86,7 @@ if __name__ == "__main__":
         logger.info("Connecting to network...")
         network.connect()
         time.sleep(0.5)
-    logger.info("Network Connected!")
+    logger.info("Network Connected")
 
 
 # Initialize a requests object with a socket and cellular interface
