@@ -42,6 +42,10 @@ def send_and_delete_json_payload(http_payload, payload_paths):
         logger.info("HTTP request successful - Removing sent data")
         for path in payload_paths:
             os.rename("/sd/data_entries/" + path, "/sd/sent_data/" + path)
+    if 400 <= response.status_code < 500:
+        logger.warning("Server says our data is invalid! - Removing invalid data")
+        for path in payload_paths:
+            os.rename("/sd/data_entries/" + path, "/sd/invalid_data/" + path)
     else:
         logger.warning(f"HTTP_REQUEST_STATUS: {response.status_code}, REASON: {response.reason}")
 

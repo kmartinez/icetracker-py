@@ -76,10 +76,14 @@ if __name__ == "__main__":
     
     try:
         #Normal boot
-        if "data_entries" not in os.listdir("/sd/"):
+        dirs = os.listdir("/sd/")
+
+        if "data_entries" not in dirs:
             os.mkdir("/sd/data_entries")
-        if "sent_data" not in os.listdir("/sd/"):
+        if "sent_data" not in dirs:
             os.mkdir("/sd/sent_data")
+        if "invalid_data" not in dirs:
+            os.mkdir("/sd/invalid_data")
         
         if DEVICE_ID >= 100:
             if RTC_DEVICE.datetime[3] in COMMS_TIME:
