@@ -230,6 +230,7 @@ def admincmd(c):
         
     # Ensure Future Alarm is Set BEFORE completely shutting down.
     elif c == "12":
+        print("SHUTTING DOWN...")
         print("Setting Next Alarm...")
         
         (YY,MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
@@ -239,8 +240,12 @@ def admincmd(c):
         RTC_DEVICE.alarm1 = (struct_time([YY,MM,DD,nextwake[0],nextwake[1],0,wday,yday,dst]), "daily")
         logger.info("Next wake time = %d:%d", RTC_DEVICE.alarm1[0][3], RTC_DEVICE.alarm1[0][4])
         RTC_DEVICE.alarm1_interrupt = True
-
-        print("SHUTTING DOWN...\nSafe to Unplug")
+        
+        while ADMIN_IO.value:
+            print("UNPLUG ADMIN JUMPER!!!")
+            sleep(2)
+        
+        print("Safe to unplug power!")
         sys.exit(0)
         
         
