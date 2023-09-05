@@ -33,7 +33,7 @@ def send_and_delete_json_payload(http_payload, payload_paths):
 
     logger.info("Sending HTTP POST")
     logger.debug(f"HTTP_REQUEST_DATA: {http_payload}")
-    response = requests.post("http://marc.ecs.soton.ac.uk/tracker-in", json=http_payload)
+    response = requests.post("http://marc.ecs.soton.ac.uk/tracker-in", json=http_payload, timeout=15)
     logger.info("Request complete")
 
     logger.debug(f"HTTP_STATUS: {response.status_code}")
@@ -48,6 +48,8 @@ def send_and_delete_json_payload(http_payload, payload_paths):
             os.rename("/sd/data_entries/" + path, "/sd/invalid_data/" + path)
     else:
         logger.warning(f"HTTP_REQUEST_STATUS: {response.status_code}, REASON: {response.reason}")
+        
+    response.close()
 
 if __name__ == "__main__":
     if len(os.listdir("/sd/data_entries/")) < 1:
