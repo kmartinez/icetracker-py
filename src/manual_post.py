@@ -82,7 +82,7 @@ def chttp_post(payload):
     time.sleep(0.1)
 
     logger.info("OPEN HTTPS Session")
-    if not fona._send_check_reply(b"AT+CHTTPSOPSE=",reply=REPLY_OK): # Opens a new HTTPS session
+    if not fona._send_check_reply(b"AT+CHTTPSOPSE=\"http://marc.ecs.soton.ac.uk/\",80",reply=REPLY_OK): # Opens a new HTTPS session
         return False
     time.sleep(0.1)
 
@@ -92,7 +92,7 @@ def chttp_post(payload):
     time.sleep(0.1)
 
     logger.info("RECEIVING HTTPS RESPONSE")
-    if not fona._send_check_reply(b"AT+CHTTPSRECV=",reply=REPLY_OK): # Receive HTTPS response after sending HTTPS request
+    if not fona._send_check_reply(b"AT+CHTTPSRECV?",reply=REPLY_OK): # Receive HTTPS response after sending HTTPS request
         return False
     time.sleep(0.1)
 
@@ -143,3 +143,4 @@ if __name__ == '__main__':
     # logger.info("HTTP SERVICES ENABLED")
 
     (chttp_post(http_payload))
+    # http_post(http_payload)
