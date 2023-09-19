@@ -75,7 +75,39 @@ def http_post(payload) -> bool:
 
 
 def chttp_post(payload):
+
     logger.info("ENABLING HTTP SERVICES")
+    if not fona._send_check_reply(b"AT+CHTTPSSTART",reply=REPLY_OK): # Initialise HTTP service for 3G - returns True
+        return False
+    time.sleep(0.1)
+
+    logger.info("OPEN HTTPS Session")
+    if not fona._send_check_reply(b"AT+CHTTPSOPSE=",reply=REPLY_OK): # Opens a new HTTPS session
+        return False
+    time.sleep(0.1)
+
+    logger.info("SENDING HTTPS REQUEST")
+    if not fona._send_check_reply(b"AT+CHTTPSSEND="+str(len(payload)),reply=REPLY_OK): # Send an HTTPS request - specifying <len> used to download data to be sent
+        return False
+    time.sleep(0.1)
+
+    logger.info("RECEIVING HTTPS RESPONSE")
+    if not fona._send_check_reply(b"AT+CHTTPSRECV=",reply=REPLY_OK): # Receive HTTPS response after sending HTTPS request
+        return False
+    time.sleep(0.1)
+
+    logger.info("CLOSING HTTPS SESSION")
+    if not fona._send_check_reply(b"AT+CHTTPSCLSE",reply=REPLY_OK): # Close opened HTTPS Session
+        return False
+    time.sleep(0.1)
+
+    logger.info("TERMINATING HTTPS SERVICES")
+    if not fona._send_check_reply(b"AT+CHTTPSSTOP",reply=REPLY_OK): # Stops HTTPS protocol stack
+        return False
+    time.sleep(0.1)
+
+
+
     return True
     
 
@@ -110,4 +142,4 @@ if __name__ == '__main__':
     # (fona._send_check_reply(b"AT+HTTPPARA=\"CID\",1",reply=REPLY_OK)) # HTTPPARA paramter - sets the bearer profile ID of the connection - returns true
     # logger.info("HTTP SERVICES ENABLED")
 
-    (http_post(http_payload))
+    (chttp_post(http_payload))
