@@ -1,6 +1,7 @@
 # Manual AT HTTP post
 
 from adafruit_fona.adafruit_fona import FONA
+from adafruit_fona.fona_3g import FONA3G
 from Drivers.SPI_SD import *
 import time
 from Drivers.PSU import * #EVERYTHING FROM THIS IS READONLY (you can use write functions, but cannot actually modify a variable)
@@ -24,6 +25,16 @@ http_payload = '{"sats": 12, "temp": 2.35, "altitude": 105.637, "timestamp": "20
 
 def http_post(payload) -> bool:
 
+    logger.info("ENABLING HTTP SERVICES")
+    if not fona._send_check_reply(b"AT+HTTPINIT",reply=REPLY_OK): # Initialise HTTP service return True
+        return False
+    time.sleep(0.1)
+
+    if not fona._send_check_reply(b"AT+HTTPPARA=\"CID\",1",reply=REPLY_OK): # HTTPPARA paramter - sets the bearer profile ID of the connection - returns true
+        return False
+    time.sleep(0.1)
+    logger.info("HTTP SERVICES ENABLED")
+
     logger.info("SETTING UP URL")
     if not fona._send_check_reply(b"AT+HTTPPARA=\"URL\",\"http://marc.ecs.soton.ac.uk/postin\"",reply=REPLY_OK):
         return False       # set HTTP parameters value
@@ -36,7 +47,6 @@ def http_post(payload) -> bool:
     if not fona._send_check_reply(b"AT+HTTPPARA=\"CONTENT\",\"application/json\"",reply=REPLY_OK):
         return False        # set HTTP parameters value
     time.sleep(0.1)
-
 
     logger.info("PROVIDING PAYLOAD")
     if not fona._send_check_reply(b"AT+HTTPDATA="+str(len(payload))+",10000",reply=REPLY_DN): # - Fails here unsupported types
@@ -63,12 +73,19 @@ def http_post(payload) -> bool:
 
     return True
 
+
+def chttp_post(payload):
+    logger.info("ENABLING HTTP SERVICES")
+    return True
     
+
 if __name__ == '__main__':
     
     logger.info("ENABLING GSM COMMS")
 
-    fona = FONA(GSM_UART, GSM_RST_PIN, debug=False)
+    # fona = FONA(GSM_UART, GSM_RST_PIN, debug=False)
+
+    fona = FONA3G(GSM_UART, GSM_RST_PIN, debug=True)
     
     logger.info("FONA initialized")
 
@@ -77,7 +94,10 @@ if __name__ == '__main__':
 
     (fona._send_check_reply(b"ATE0",reply=REPLY_OK)) # using send_check_reply alone responds with OK which means echoing is now turned off.
 
+    fona._send_check_reply(b"AT+CMEE?",reply=REPLY_OK) # returns 2
+
     # enable gprs - using apn
+    logger.info("ENABLING GPRS")
     while not fona.gprs:
         fona.set_gprs((SECRETS["apn"], SECRETS["apn_username"], SECRETS["apn_password"]),enable=True)
     print(fona.gprs) # retruns false - need to enable using set_gprs() which needs apn, username and pw
@@ -85,9 +105,9 @@ if __name__ == '__main__':
 
     # AT+HTTPCPOST - https://docs.espressif.com/projects/esp-at/en/latest/esp32/AT_Commands_Set/HTTP_AT_Commands.html#cmd-httpcpost
 
-    (fona._send_check_reply(b"AT+HTTPINIT",reply=REPLY_OK)) # Initialise HTTP service return True
-    time.sleep(0.1)
-    (fona._send_check_reply(b"AT+HTTPPARA=\"CID\",1",reply=REPLY_OK)) # HTTPPARA paramter - sets the bearer profile ID of the connection - returns true
-    logger.info("HTTP SERVICES ENABLED")
+    # (fona._send_check_reply(b"AT+HTTPINIT",reply=REPLY_OK)) # Initialise HTTP service return True
+    # time.sleep(0.1)
+    # (fona._send_check_reply(b"AT+HTTPPARA=\"CID\",1",reply=REPLY_OK)) # HTTPPARA paramter - sets the bearer profile ID of the connection - returns true
+    # logger.info("HTTP SERVICES ENABLED")
 
     (http_post(http_payload))
