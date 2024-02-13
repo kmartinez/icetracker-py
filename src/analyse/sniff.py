@@ -1,4 +1,5 @@
 # use with an xbee radio on usb port to sniff glacsweb 2022 packets
+# Author: M.Jones 2023
 import serial
 import binascii
 import time
