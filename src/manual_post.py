@@ -15,11 +15,11 @@ CMD_AT = b"AT"
 REPLY_OK = b"OK"
 REPLY_DN = b"DOWNLOAD"
 
-SERVER_URL = "http://marc.ecs.soton.ac.uk/postin"
+SERVER_URL = "http://iotgate.ecs.soton.ac.uk/postin"
 
-http_payload = '{"sats": 12, "temp": 2.35, "altitude": 105.637, "timestamp": "2023-09-01T15:01:02", "batv": 3.92, "latitude": "64.1024530713333333", "rover_id": 19, "longitude": "-16.3378673346666667"}'
+# http_payload = '{"sats": 12, "temp": 2.35, "altitude": 105.637, "timestamp": "2023-09-01T15:01:02", "batv": 3.92, "latitude": "64.1024530713333333", "rover_id": 19, "longitude": "-16.3378673346666667"}'
 # json_payload = bytearray(http_payload)
-# http_payload = [{"batv": "3.92", "latitude": "64.1024530713333333", "rover_id": "19", "longitude": "-16.3378673346666667"}]
+# test_payload = [{"batv": "3.92", "latitude": "64.1024530713333333", "rover_id": "19", "longitude": "-16.3378673346666667"}]
 # http_payload = ["abcdef-glacsweb"]
 # http_payload = []
 
@@ -36,7 +36,7 @@ def http_post(payload) -> bool:
     logger.info("HTTP SERVICES ENABLED")
 
     logger.info("SETTING UP URL")
-    if not fona._send_check_reply(b"AT+HTTPPARA=\"URL\",\"http://marc.ecs.soton.ac.uk/postin\"",reply=REPLY_OK):
+    if not fona._send_check_reply(b"AT+HTTPPARA=\"URL\",\"http://iotgate.ecs.soton.ac.uk/postin\"",reply=REPLY_OK):
         return False       # set HTTP parameters value
     time.sleep(0.1)
 
@@ -52,7 +52,9 @@ def http_post(payload) -> bool:
     if not fona._send_check_reply(b"AT+HTTPDATA="+str(len(payload))+",10000",reply=REPLY_DN): # - Fails here unsupported types
         return False      # input HTTP data
     else:
-        fona._uart_write(str(json.loads(payload)).encode())
+        # fona._uart_write(str(json.loads(payload)))
+        # fona._uart_write(str(json.loads(payload)).encode())
+        fona._uart_write(bytearray(payload))
     time.sleep(0.1)
 
     logger.info("POSTING DATA")
@@ -64,6 +66,10 @@ def http_post(payload) -> bool:
 
     if not fona._send_check_reply(b"AT+HTTPREAD",reply=REPLY_OK):
         return False       # Read HTTP Server Response
+    else:
+        logger.info("HTTP request successful - Removing sent data")
+        for path in payload_paths:
+            os.rename("/sd/data_entries/" + path, "/sd/sent_data/" + path)
     time.sleep(0.1)
 
     logger.info("TERMINATING HTTP SERVICES")
@@ -113,11 +119,15 @@ def chttp_post(payload):
 
 if __name__ == '__main__':
     
+    data_paths = os.listdir("/sd/data_entries/")
+    http_payload = []
+    payload_paths = []
+
     logger.info("ENABLING GSM COMMS")
 
-    # fona = FONA(GSM_UART, GSM_RST_PIN, debug=False)
+    fona = FONA(GSM_UART, GSM_RST_PIN, debug=False)
 
-    fona = FONA3G(GSM_UART, GSM_RST_PIN, debug=True)
+    # fona = FONA3G(GSM_UART, GSM_RST_PIN, debug=True)
     
     logger.info("FONA initialized")
 
@@ -142,5 +152,32 @@ if __name__ == '__main__':
     # (fona._send_check_reply(b"AT+HTTPPARA=\"CID\",1",reply=REPLY_OK)) # HTTPPARA paramter - sets the bearer profile ID of the connection - returns true
     # logger.info("HTTP SERVICES ENABLED")
 
-    (chttp_post(http_payload))
-    # http_post(http_payload)
+    # (chttp_post(http_payload))
+
+    data_paths = os.listdir("/sd/data_entries/")
+    http_payload = []
+    payload_paths = []
+
+    if len(data_paths) < 1:
+        logger.warning("No unsent data on SD") # ??? why keep for loop next???
+    for path in data_paths:
+        with open("/sd/data_entries/" + path, "r") as file:
+            try:
+                http_payload.append(json.load(file))
+                payload_paths.append(path)
+            except json.JSONDecodeError:
+                logger.warning("Invalid JSON file: %s", path)
+                os.rename("/sd/data_entries/" + path, "/sd/invalid_data/" + path)
+        if len(http_payload) >= MAX_READINGS_IN_SINGLE_HTTP:
+            print("MAX READINGS REACHED")
+            http_post(http_payload)
+            http_payload = []
+            payload_paths = []    
+    # print(http_payload)
+    # print(type(http_payload))
+    # print(len(http_payload))
+
+    http_post(json.dumps(http_payload))
+
+
+
