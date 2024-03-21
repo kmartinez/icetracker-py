@@ -57,7 +57,7 @@ if __name__ == "__main__":
             exec(open('./Utility/GSM.py').read())
         if input == "4":
             print("Manual GSM Test Selected")
-            exec(open('./Utility/Comms_AT.py').read())
+            exec(open('Comms_AT.py').read())
     else:
         #Perform failsafe procedures (timeouts, watchdog, etc.)
         if RTC_DEVICE.alarm1_status and RTC_DEVICE.alarm_is_in_future():
@@ -92,7 +92,7 @@ if __name__ == "__main__":
         if DEVICE_ID >= 100:
             if RTC_DEVICE.datetime[3] in COMMS_TIME:
                 logger.info('Comms Time')
-                exec(open('./Utility/Comms_AT.py.py').read())
+                exec(open('Comms_AT.py').read())
                 # exec(open('./Comms.py').read())
             else:
                 logger.info("run base")
