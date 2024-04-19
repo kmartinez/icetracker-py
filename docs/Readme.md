@@ -1,6 +1,10 @@
 # Icetracker firmware for rover and base station 2022/3
 
-see glacsweb.org
+see glacsweb.org for more details
+This mainly circuitpython code is designed to run the icetrackers we produced to monitor glaciers using Ublox M9P GNSS units.
+It does the following:
+ * wakes up the units at regular intervals (RTC enables the PSU)
+ * during GPS fixes the base feeds RTCM messages from the GPS to the radio
 
 ## Circuitpython
 designed to run on circuitpython - tested on version 8
