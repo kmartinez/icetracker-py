@@ -132,9 +132,9 @@ if __name__ == '__main__':
     logger.info("FONA initialized")
 
 
-    fona._send_check_reply(CMD_AT,reply=REPLY_OK) # True # sends data to fona - validates if true - send AT - expecting response OK - received True 
+    fona._send_check_reply(CMD_AT,reply=REPLY_OK)      # sends data to fona - validates if true - send AT - expecting response OK - received True 
 
-    (fona._send_check_reply(b"ATE0",reply=REPLY_OK)) # using send_check_reply alone responds with OK which means echoing is now turned off.
+    fona._send_check_reply(b"ATE0",reply=REPLY_OK)     # turn off echoing
 
     fona._send_check_reply(b"AT+CMEE?",reply=REPLY_OK) # returns 2
 
@@ -142,17 +142,16 @@ if __name__ == '__main__':
     logger.info("ENABLING GPRS")
     while not fona.gprs:
         fona.set_gprs((SECRETS["apn"], SECRETS["apn_username"], SECRETS["apn_password"]),enable=True)
-    print(fona.gprs) # retruns false - need to enable using set_gprs() which needs apn, username and pw
+    print(fona.gprs)       # returns false - need to enable using set_gprs() which needs apn, username and pw
     logger.info("GPRS ENABLED")
 
+    # version for unused mode
     # AT+HTTPCPOST - https://docs.espressif.com/projects/esp-at/en/latest/esp32/AT_Commands_Set/HTTP_AT_Commands.html#cmd-httpcpost
-
     # (fona._send_check_reply(b"AT+HTTPINIT",reply=REPLY_OK)) # Initialise HTTP service return True
     # time.sleep(0.1)
     # (fona._send_check_reply(b"AT+HTTPPARA=\"CID\",1",reply=REPLY_OK)) # HTTPPARA paramter - sets the bearer profile ID of the connection - returns true
     # logger.info("HTTP SERVICES ENABLED")
-
-    # (chttp_post(http_payload))
+    # chttp_post(http_payload)
 
     data_paths = os.listdir("/sd/data_entries/")
     http_payload = []
