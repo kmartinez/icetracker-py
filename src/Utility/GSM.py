@@ -44,7 +44,7 @@ if __name__ == "__main__":
             raise Exception("FONA could not attach")
         logger.info("Attaching to network...")
         time.sleep(0.5)
-    logger.info("Attached!")
+    logger.info("Attached")
 
     logger.info(f"FONA RSSI: {fona.rssi}")
 
@@ -53,10 +53,10 @@ if __name__ == "__main__":
         failcount += 1
         if failcount > MAX_FAIL_COUNT:
             raise Exception("FONA could not connect")
-        logger.info("Connecting to network...")
+        logger.info("Connecting to network")
         network.connect()
         time.sleep(0.5)
-    logger.info("Network Connected!")
+    logger.info("Network Connected")
 
 
 # Initialize a requests object with a socket and cellular interface
@@ -74,20 +74,6 @@ if __name__ == "__main__":
             "test1": "asdfasdfasdfasdf",
             "test2": "asdfasdfasdfasdf",
             "test3": "asdfasdfasdfasdf",
-            "test4": "asdfasdfasdfasdf",
-            "test5": "asdfasdfasdfasdf",
-            "test6": "asdfasdfasdfasdf",
-            "test11": "asdfasdfasdfasdf",
-            "test22": "asdfasdfasdfasdf",
-            "test33": "asdfasdfasdfasdf",
-            "test44": "asdfasdfasdfasdf",
-            "test55": "asdfasdfasdfasdf",
-            "test66": "asdfasdfasdfasdf",
-            "test111": "asdfasdfasdfasdf",
-            "test212": "asdfasdfasdfasdf",
-            "test313": "asdfasdfasdfasdf",
-            "test414": "asdfasdfasdfasdf",
-            "test515": "asdfasdfasdfasdf",
-            "test616": "asdfasdfasdfasdf",
         }])
         logger.info(f"STATUS: {response.status_code}")
+        time.sleep(5)
