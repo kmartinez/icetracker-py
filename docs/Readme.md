@@ -5,6 +5,9 @@ This mainly circuitpython code is designed to run the icetrackers we produced to
 It does the following:
  * wakes up the units at regular intervals (RTC enables the PSU)
  * during GPS fixes the base feeds RTCM messages from the GPS to the radio
+ * when rovers get a fix they send the data back to the base
+ * at 12:00 and 24:00 the base sends all unsent data to the server in Southampton
+
 
 ## Circuitpython
 designed to run on circuitpython - tested on version 8
