@@ -169,7 +169,7 @@ if __name__ == '__main__':
                 os.rename("/sd/data_entries/" + path, "/sd/invalid_data/" + path)
         if len(http_payload) >= MAX_READINGS_IN_SINGLE_HTTP:
             print("MAX READINGS REACHED")
-            http_post(http_payload)
+            http_post(json.dumps(http_payload))
             http_payload = []
             payload_paths = []    
     # print(http_payload)
@@ -177,6 +177,6 @@ if __name__ == '__main__':
     # print(len(http_payload))
 
     http_post(json.dumps(http_payload))
-
+    shutdown()
 
 
