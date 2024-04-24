@@ -1,7 +1,6 @@
-"""Main code for base stations.
-Creates a scheduler and adds all base station tasks to it
+"""tests GSM/fona connection
+sends test POST to a test server
 """
-
 
 from adafruit_fona.adafruit_fona import FONA
 import adafruit_fona.adafruit_fona_network as network
