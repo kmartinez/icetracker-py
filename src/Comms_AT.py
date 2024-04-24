@@ -49,7 +49,7 @@ def http_post(payload) -> bool:
     time.sleep(0.1)
 
     logger.info("PROVIDING PAYLOAD")
-    if not fona._send_check_reply(b"AT+HTTPDATA="+str(len(payload))+",10000",reply=REPLY_DN): # - Fails here unsupported types
+    if not fona._send_check_reply(b"AT+HTTPDATA="+str(len(payload))+",10000",reply=REPLY_DN): # Send data to HTTP server - <len> is the length of data to be sent - 10000 is the timeout
         return False      # input HTTP data
     else:
         # fona._uart_write(str(json.loads(payload)))
@@ -169,14 +169,11 @@ if __name__ == '__main__':
                 os.rename("/sd/data_entries/" + path, "/sd/invalid_data/" + path)
         if len(http_payload) >= MAX_READINGS_IN_SINGLE_HTTP:
             print("MAX READINGS REACHED")
-            http_post(http_payload)
+            http_post(json.dumps(http_payload))
             http_payload = []
             payload_paths = []    
-    # print(http_payload)
-    # print(type(http_payload))
-    # print(len(http_payload))
 
     http_post(json.dumps(http_payload))
-
+    shutdown()
 
 

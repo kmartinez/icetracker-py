@@ -47,7 +47,7 @@ if __name__ == "__main__":
         1 - normal boot (no timeouts)
         2 - admin mode
         3 - GSM test
-        4 - Manual GSM Test""")
+        4 - Manual GSM Broadcast""")
         input = input()
         if input == "2":
             supervisor.set_next_code_file("./Utility/adminmode.py")
@@ -56,7 +56,7 @@ if __name__ == "__main__":
             print("GSM SELECTED")
             exec(open('./Utility/GSM.py').read())
         if input == "4":
-            print("Manual GSM Test Selected")
+            print("Manual GSM Broadcast Selected")
             exec(open('Comms_AT.py').read())
     else:
         #Perform failsafe procedures (timeouts, watchdog, etc.)
