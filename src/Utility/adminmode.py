@@ -133,18 +133,11 @@ def get_next_alarm_time(curr_hr, curr_min):
 def admin_menu():
 
     print("Admin mode:\n")
-    print("1\tDate/Time")
-    print("2\tmount SD Flash")
-    print("3\tAvailable Storage")
-    print("4\tlist Files on SD")
-    print("5\tGPS I2C NMEA")
-    print("6\tGPS UART RTCM3")
-    print("7\tXBee Radio - UART")
-    print("8\tTemperature")
-    print("9\tBatV")
-    print("10\tDelete all SD data")
-    print("11\tPrint Unsent Files")
-    print("12\tSystem Shutdown")
+    print("1 - Date/Time\t\t 5 - GPS I2C NMEA\t 9 - BatV\n")
+    print("2 - Mount SD Flash\t 6 - GPS UART RTCM3\t 10 - Delete all SD data\n")
+    print("3 - Available Storage\t 7 - XBee Radio - UART\t 11 - Print Unsent Files\n")
+    print("4 - List Files on SD\t 8 - Temperature\t 12 - System Shutdown\n")
+
     
     print("Push Button or Enter 0 to exit Admin mode")
 
@@ -265,4 +258,3 @@ if __name__ == '__main__':
     gc.collect()
     logger.info("DEVICE IN NORMAL MODE")
     exec(open('./main.py').read())
-
