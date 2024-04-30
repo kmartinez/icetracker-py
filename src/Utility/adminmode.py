@@ -56,9 +56,9 @@ def gps_uart():
                 print(RTCM3_UART.readline())
                 count -= 1
             else:
-                print("Nothing in Buffer") # should say no rtcm messgread ???
+                print("Failed to read an RTCM")
     except BaseException:
-        print("GPS not detected")
+        print("GPS update failed")
         pass
 
 def gps_i2c():
@@ -98,10 +98,10 @@ def radio_test():
             if Drivers.Radio.UART is not None:
                 print(Drivers.Radio.UART.readline())
             else:
-                print("Nothing in Buffer")
+                print("No data from radio")
             counter -= 1
     except BaseException:
-        print("Radio not connected?\n")
+        print("Radio not connected?")
         pass
 
 
@@ -133,10 +133,10 @@ def get_next_alarm_time(curr_hr, curr_min):
 def admin_menu():
 
     print("Admin mode:\n")
-    print("1 - Date/Time\t\t 5 - GPS I2C NMEA\t 9 - BatV\n")
-    print("2 - Mount SD Flash\t 6 - GPS UART RTCM3\t 10 - Delete all SD data\n")
-    print("3 - Available Storage\t 7 - XBee Radio - UART\t 11 - Print Unsent Files\n")
-    print("4 - List Files on SD\t 8 - Temperature\t 12 - System Shutdown\n")
+    print("1 - Date/Time\t\t 5 - GPS I2C NMEA\t 9 - BatV")
+    print("2 - Mount SD Flash\t 6 - GPS UART RTCM3\t 10 - Delete all SD data")
+    print("3 - Available Storage\t 7 - XBee Radio - UART\t 11 - Print Unsent Files")
+    print("4 - List Files on SD\t 8 - Temperature\t 12 - System Shutdown")
 
     
     print("Push Button or Enter 0 to exit Admin mode")
