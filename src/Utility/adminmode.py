@@ -169,7 +169,7 @@ def admincmd(c):
     elif c == "4":
         from Drivers.SPI_SD import print_directory
         print(f"Files on SD Chip: ",print_directory("/sd"))
-    elif c == "6":
+    elif c == "5":
         print("Reading NMEA Messages from GPS (I2c)")
         gps_i2c()
     elif c =="6":
