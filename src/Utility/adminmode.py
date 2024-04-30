@@ -62,7 +62,7 @@ def gps_uart():
         pass
 
 def gps_i2c():
-    count = 1
+    count = 5
     while count > 0:
         GPS_DEVICE.update()
 
@@ -162,7 +162,7 @@ def admincmd(c):
     elif c == "4":
         from Drivers.SPI_SD import print_directory
         print(f"Files on SD Chip: ",print_directory("/sd"))
-    elif c == "6":
+    elif c == "5":
         print("Reading NMEA Messages from GPS (I2c)")
         gps_i2c()
     elif c =="6":
@@ -172,13 +172,13 @@ def admincmd(c):
         print("Testing XBee Radio Module is active.")
         radio_test()
     elif c == "8":
-        print("Temperature Sensor Reading:")
+        print("Temperature:")
         temperature_sensor()
     elif c == "9":
         print("Battery Voltage: ")
         print(read_bat_voltage())
     elif c == "10":
-        yesno = input("Delete all data? (y/n) ")
+        yesno = input("Delete all data? (y/n)")
         if yesno == "y" :
             print("REMOVING ALL DATA")
             from Drivers.SPI_SD import mount_SD, SPI_SD, CS
@@ -218,13 +218,12 @@ def admincmd(c):
                     print(fd.readline() )
             print("DONE")
         except OSError:
-            logger.warning("SD Chip not mounted.\n Files not available.")
+            logger.warning("failed to read data_entries")
             return
         
     # Ensure Future Alarm is Set BEFORE completely shutting down.
     elif c == "12":
-        print("SHUTTING DOWN...")
-        print("Setting Next Alarm...")
+        print("Setting Next Alarm then shutting down")
         
         (YY,MM, DD, hh, mm, ss, wday, yday, dst) = RTC_DEVICE.datetime
         logger.info("Current Time: %d:%d", hh, mm)
@@ -235,10 +234,10 @@ def admincmd(c):
         RTC_DEVICE.alarm1_interrupt = True
         
         while ADMIN_IO.value:
-            print("UNPLUG ADMIN JUMPER!!!")
+            print("UNPLUG ADMIN JUMPER!")
             sleep(2)
         
-        print("Safe to unplug power!")
+        print("Safe to unplug laptop!")
         sys.exit(0)
         
         
