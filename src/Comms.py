@@ -19,6 +19,8 @@ import adafruit_logging as logging
 
 logger = logging.getLogger("BASE")
 
+MAX_SENT_DATA_FILES = 30
+
 
 #this is a global variable so i can still get the data even if the rover loop times out
 finished_rovers: dict[int, bool] = {}
@@ -42,6 +44,18 @@ def send_and_delete_json_payload(http_payload, payload_paths):
         logger.info("HTTP request successful - Removing sent data")
         for path in payload_paths:
             os.rename("/sd/data_entries/" + path, "/sd/sent_data/" + path)
+
+        # if contents in sd/sent_data is too large, remove files until it is less than MAX_SENT_DATA_FILES (30)
+        sent_data = os.listdir("/sd/sent_data/")
+        if len(sent_data) > MAX_SENT_DATA_FILES:
+            for file in sent_data[:-MAX_SENT_DATA_FILES]:
+                os.remove("/sd/sent_data/" + file)
+        
+        # if there are contents inside of sent_data, remove them all
+        # if len(os.listdir("/sd/sent_data/")) > 0:
+        #     for file in os.listdir("/sd/sent_data/"):
+        #         os.remove("/sd/sent_data/" + file)
+
     if 400 <= response.status_code < 500:
         logger.warning("Server says our data is invalid! - Removing invalid data")
         for path in payload_paths:

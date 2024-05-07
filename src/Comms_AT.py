@@ -15,6 +15,8 @@ CMD_AT = b"AT"
 REPLY_OK = b"OK"
 REPLY_DN = b"DOWNLOAD"
 
+MAX_SENT_DATA_FILES = 30
+
 SERVER_URL = "http://iotgate.ecs.soton.ac.uk/postin"
 
 # http_payload = '{"sats": 12, "temp": 2.35, "altitude": 105.637, "timestamp": "2023-09-01T15:01:02", "batv": 3.92, "latitude": "64.1024530713333333", "rover_id": 19, "longitude": "-16.3378673346666667"}'
@@ -70,6 +72,17 @@ def http_post(payload) -> bool:
         logger.info("HTTP request successful - Removing sent data")
         for path in payload_paths:
             os.rename("/sd/data_entries/" + path, "/sd/sent_data/" + path)
+
+        # if contents in sd/sent_data is too large, remove files until it is less than MAX_SENT_DATA_FILES (30)
+        sent_data = os.listdir("/sd/sent_data/")
+        if len(sent_data) > MAX_SENT_DATA_FILES:
+            for file in sent_data[:-MAX_SENT_DATA_FILES]: 
+                os.remove("/sd/sent_data/" + file)
+        
+        # if there are contents inside of sent_data, remove them all - available in case the first if statement is not needed
+        # if len(os.listdir("/sd/sent_data/")) > 0:
+        #     for file in os.listdir("/sd/sent_data/"):
+        #         os.remove("/sd/sent_data/" + file)
     time.sleep(0.1)
 
     logger.info("TERMINATING HTTP SERVICES")
