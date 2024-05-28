@@ -158,6 +158,17 @@ if __name__ == '__main__':
     print(fona.gprs)       # returns false - need to enable using set_gprs() which needs apn, username and pw
     logger.info("GPRS ENABLED")
 
+    # check PDP context - needed to avoid network error response code 601 - source https://m2msupport.net/m2msupport/at-command-for-http-functions-for-remote-server-data-access/
+    logger.info("CHECKING PDP CONTEXT")
+    fona._send_check_reply(b"AT+CGDCONT?",reply=REPLY_OK) # returns +CGDCONT: 1,"IP","TM","
+    fona._send_check_reply(b"AT+CGACT?",reply=REPLY_OK)   # returns 1 - attached to GPRS service
+    
+    if not fona._send_check_reply(b"AT+CGACT?",reply=REPLY_OK):
+        logger.error("Failed to activate PDP service")
+    else:
+        fona.write(b"AT+CGACT=1,1\r\n")
+    logger.info("PDP CONTEXT CHECKED")
+
     # version for unused mode
     # AT+HTTPCPOST - https://docs.espressif.com/projects/esp-at/en/latest/esp32/AT_Commands_Set/HTTP_AT_Commands.html#cmd-httpcpost
     # (fona._send_check_reply(b"AT+HTTPINIT",reply=REPLY_OK)) # Initialise HTTP service return True
