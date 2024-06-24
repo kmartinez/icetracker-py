@@ -128,7 +128,63 @@ def chttp_post(payload):
 
 
     return True
-    
+
+
+def uhttp_post(payload) -> bool:
+    logger.info("BASIC HTTP POST SETUP")
+    logger.info("SET VERBOSE ERROR CODES")
+    if not fona._send_check_reply(b"AT+CMEE=2",reply=REPLY_OK): # Set verbose error result codes
+        return False
+    time.sleep(0.1)
+
+    logger.info("RESET HTTP PROFILE #0")
+    if not fona._send_check_reply(b"AT+UHTTP=0",reply=REPLY_OK): # Reset HTTP profile #0
+        return False
+    time.sleep(0.1)
+
+    logger.info("SET URL")
+    if not fona._send_check_reply(b"AT+UHTTP=1,\"http://iotgate.ecs.soton.ac.uk/postin\"",reply=REPLY_OK): # Set URL
+        return False
+    time.sleep(0.1)
+
+    logger.info("SET HTTP METHOD")
+    if not fona._send_check_reply(b"AT+UHTTP=2,1",reply=REPLY_OK): # Set HTTP method to POST
+        return False
+    time.sleep(0.1)
+
+    logger.info("SET HTTP DATA")
+    if not fona._send_check_reply(b"AT+UHTTP=3,0,0",reply=REPLY_OK): # Set HTTP data to 0 bytes
+        return False
+    time.sleep(0.1)
+
+    logger.info("SET HTTP HEADER")
+    if not fona._send_check_reply(b"AT+UHTTP=4,0",reply=REPLY_OK): # Set HTTP header to 0 bytes
+        return False
+    time.sleep(0.1)
+
+    logger.info("SET HTTP DATA")
+    if not fona._send_check_reply(b"AT+UHTTP=5,"+str(len(payload)),reply=REPLY_OK): # Set HTTP data to <len> bytes
+        return False
+    else:
+        fona._uart_write(bytearray(payload))
+    time.sleep(0.1)
+
+    logger.info("SEND HTTP POST")
+    if not fona._send_check_reply(b"AT+UHTTP=6",reply=REPLY_OK): # Send HTTP POST
+        return False
+    time.sleep(0.1)
+
+    logger.info("READ HTTP RESPONSE")
+    if not fona._send_check_reply(b"AT+UHTTP=7",reply=REPLY_OK): # Read HTTP response
+        return False
+    time.sleep(0.1)
+
+    logger.info("TERMINATE HTTP PROFILE")
+    if not fona._send_check_reply(b"AT+UHTTP=8",reply=REPLY_OK): # Terminate HTTP profile
+        return False
+    time.sleep(0.1)
+
+    return True
 
 if __name__ == '__main__':
     
