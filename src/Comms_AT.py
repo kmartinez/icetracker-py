@@ -104,26 +104,38 @@ def uhttp_post(payload) -> bool:
 def uhttp_setup(payload):
     print(fona._send_check_reply(b"AT+CMEE=2",reply=REPLY_OK)) # Set verbose error result codes
 
+    # print(fona._send_check_reply(b"AT+UPSD=0,1,\"click\"",reply=REPLY_OK)) # set the APN
+
+    # print(fona._send_check_reply(b"AT+UPSDA=0,3",reply=REPLY_OK)) # GPRS attach
+
+    # print(fona._send_check_reply(b"AT+UPSND=0,0",reply=REPLY_OK)) # get the IP address
+
     print(fona._send_check_reply(b"AT+UDWNFILE=\"postdata.txt\",11",reply=REPLY_OK))
+
+    fona._uart_write(bytearray(payload))
 
     print(fona._send_check_reply(b"AT+URDFILE=\"postdata.txt\"",reply=REPLY_OK))
 
     print(fona._send_check_reply(b"AT+UHTTP=0",reply=REPLY_OK)) # Reset HTTP profile #0
 
     print(fona._send_check_reply(b"AT+UHTTP=0,1,\"http://marc.ecs.soton.ac.uk/postin\"",reply=REPLY_OK)) # Set URL
+    # print(fona._send_check_reply(b"AT+UHTTP=0,1,\"httpbin.org\"",reply=REPLY_OK)) # Set URL
 
     print(fona._send_check_reply(b"AT+UHTTP=0,5,80",reply=REPLY_OK)) # Set port of HTTP request to 80
 
-    print(fona._send_check_reply(b"AT+UHTTP=0,20,2,1",reply=REPLY_OK)) # Mapping the embedded HTTP client to the HTTP POST method
+    # print(fona._send_check_reply(b"AT+UHTTP=0,20,2,1",reply=REPLY_OK)) # Mapping the embedded HTTP client to the HTTP POST method
     # print(fona._send_check_reply(b"AT+UDNSRN=0,\"http://marc.ecs.soton.ac.uk/postin\"",reply=REPLY_OK)) # DNS Resolution of URL   - Doesn't work
     
     # print(fona._send_check_reply(b"AT+UHTTPC=0,5,"/post","post.ffs","name_post=MyName&age_post=30",0",reply=REPLY_OK)) # Set HTTP data to 0 bytes
 
-    # print(fona._send_check_reply(b"AT+UHTTPC=0,4,\"/post\", \"result.txt\",\"postdata.txt\",1",reply=REPLY_OK)) # Send HTTP POST
-
-    print(fona._send_check_reply(b"AT+UHTTPC=0,1,\"/\",\"result.txt\"",reply=REPLY_OK)) 
+    print(fona._send_check_reply(b"AT+UHTTPC=0,4,\"/post\", \"result.txt\",\"postdata.txt\",1",reply=REPLY_OK)) # Send HTTP POST
 
     print(fona._send_check_reply(b"AT+URDFILE=\"result.txt\"",reply=REPLY_OK)) # check the server's reply
+    fona._read_line()
+
+    # print(fona._send_check_reply(b"AT+UHTTPC=0,1,\"/\",\"result.txt\"",reply=REPLY_OK)) 
+
+    # print(fona._send_check_reply(b"AT+URDFILE=\"result.txt\"",reply=REPLY_OK)) # check the server's reply
 
     # print(fona._send_check_reply(b"AT+UHTTP=0,6",reply=REPLY_OK)) # Send HTTP POST
 
@@ -275,7 +287,7 @@ if __name__ == '__main__':
     print(fona._send_check_reply(b"AT+CGACT=1,1",reply=REPLY_OK))  # Activate PDP context 1 - returns OK
     print(fona._send_check_reply(b"AT+CGDCONT?",reply=b"CGDCONT:"))  # return IPV4 Address
 
-    uhttp_setup(test_payload)
+    uhttp_setup(json.dumps(test_payload))
 
 
     # print(fona._send_check_reply(b"AT+CGDCONT=1,\"IP\",\"TM\"",reply=REPLY_OK))  # Set PDP context 1 - returns OK
