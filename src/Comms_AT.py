@@ -138,7 +138,9 @@ def uhttp_setup(payload):
     logger.info("SUBMIT POST COMMAND IN JSON FORMAT - 4 STORE ANSWER IN RESULT.TXT")
     # print(fona._send_check_reply(b"AT+UHTTPC=0,4,\"/post\", \"responseFile.txt\",\"postContent.txt\",4",reply=REPLY_OK)) # Send HTTP POST
     print(fona._send_check_reply(b"AT+UHTTPC=0,4,\"/postin\",\"resultResponseFile.txt\",\"postFile.txt\",4",reply=REPLY_OK))
-    # print(fona._send_check_reply(b"AT+UHTTPC=0,5,\"/postin\",\"responseFile.txt\",\"4G message from Sherif\",1",reply=REPLY_OK)) -- works
+    # print(fona._send_check_reply(b"AT+UHTTPC=0,5,\"/postin\",\"responseFile.txt\",\"4G message from Sherif\",1",reply=REPLY_OK)) #-- works
+    # print(fona._send_check_reply(b"AT+UHTTPC=0,5,\"/postin\",\"responseFile.txt\","+bytearray(payload)+",4",reply=REPLY_OK))
+
 
     # not working UHTTPER: 0, 3, 11
     # error class = HTTP Protocol Error Class = 3
@@ -147,7 +149,11 @@ def uhttp_setup(payload):
     logger.info("READING HTTP RESPONSE")
     print(fona._send_check_reply(b"AT+URDFILE=\"responseFile.txt\"",reply=REPLY_OK)) # check the server's reply
     fona._read_line()
-
+    time.sleep(1)
+    logger.info("DELETING FILENAME")
+    print(fona._send_check_reply(b"AT+UDELFILE=\"postFile.txt\"",reply=REPLY_OK))
+    # logger.info("Check data is present in file")
+    # print(fona._send_check_reply(b"AT+URDFILE=\"postFile.txt\"",reply=REPLY_OK))
     # print(fona._send_check_reply(b"AT+UHTTPC=0,1,\"/\",\"result.txt\"",reply=REPLY_OK)) 
 
     # print(fona._send_check_reply(b"AT+URDFILE=\"result.txt\"",reply=REPLY_OK)) # check the server's reply
@@ -440,5 +446,6 @@ if __name__ == '__main__':
 
 # Reference links for HTTP POST
 # https://content.u-blox.com/sites/default/files/documents/LARA-R6-L6_ATCommands_UBX-21046719.pdf
+# https://files.seeedstudio.com/wiki/LTE_Cat_1_Pi_HAT/res/AT-CommandsExamples_AppNote_(UBX-13001820).pdf
 # http_command - allowed values for LARA-L6/:LARA-R6 - 0,1,2,3,4,5 - DO NOT USE 6 and 7!!
 # possible APN not set correctly 
