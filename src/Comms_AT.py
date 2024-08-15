@@ -26,6 +26,7 @@ SERVER_URL = "http://iotgate.ecs.soton.ac.uk/postin"
 # http_payload = '{"sats": 12, "temp": 2.35, "altitude": 105.637, "timestamp": "2023-09-01T15:01:02", "batv": 3.92, "latitude": "64.1024530713333333", "rover_id": 19, "longitude": "-16.3378673346666667"}'
 # json_payload = bytearray(http_payload)
 test_payload = [{"batv": "3.92", "latitude": "64.1024530713333333", "rover_id": "19", "longitude": "-16.3378673346666667"}]
+message_payload = "post data from 4g LARA module - Sherif"
 # http_payload = ["abcdef-glacsweb"]
 # http_payload = []
 
@@ -102,25 +103,31 @@ def uhttp_post(payload) -> bool:
 # source: https://content.u-blox.com/sites/default/files/documents/LARA-R6-Internet-applications-development-guide_AppNote_UBX-22001854.pdf
 
 def uhttp_setup(payload):
+    logger.info("SET VERBOSE ERROR CODES")
     print(fona._send_check_reply(b"AT+CMEE=2",reply=REPLY_OK)) # Set verbose error result codes
 
-    # print(fona._send_check_reply(b"AT+UPSD=0,1,\"click\"",reply=REPLY_OK)) # set the APN
+    # print(fona._send_check_reply(b"AT+UPSD=0,1,SECRETS{apn}",reply=REPLY_OK)) # set the APN - for LARA-R2 - must use CGDCONT
 
     # print(fona._send_check_reply(b"AT+UPSDA=0,3",reply=REPLY_OK)) # GPRS attach
 
     # print(fona._send_check_reply(b"AT+UPSND=0,0",reply=REPLY_OK)) # get the IP address
 
-    print(fona._send_check_reply(b"AT+UDWNFILE=\"postdata.txt\",11",reply=REPLY_OK))
+    logger.info("WRITE PAYLOAD TO FILE")
+    print(fona._send_check_reply(b"AT+UDWNFILE=\"postContent.txt\",11",reply=REPLY_OK))
 
     fona._uart_write(bytearray(payload))
 
-    print(fona._send_check_reply(b"AT+URDFILE=\"postdata.txt\"",reply=REPLY_OK))
+    logger.info("Check data is present in file")
+    print(fona._send_check_reply(b"AT+URDFILE=\"postContent.txt\"",reply=REPLY_OK))
 
+    logger.info("RESET HTTP PROFILE #0")
     print(fona._send_check_reply(b"AT+UHTTP=0",reply=REPLY_OK)) # Reset HTTP profile #0
 
-    print(fona._send_check_reply(b"AT+UHTTP=0,1,\"http://marc.ecs.soton.ac.uk/postin\"",reply=REPLY_OK)) # Set URL
+    logger.info("SET URL")
+    print(fona._send_check_reply(b"AT+UHTTP=0,1,\"marc.ecs.soton.ac.uk\"",reply=REPLY_OK)) # Set URL
     # print(fona._send_check_reply(b"AT+UHTTP=0,1,\"httpbin.org\"",reply=REPLY_OK)) # Set URL
 
+    logger.info("SET PORT OF HTTP REQUEST TO 80")
     print(fona._send_check_reply(b"AT+UHTTP=0,5,80",reply=REPLY_OK)) # Set port of HTTP request to 80
 
     # print(fona._send_check_reply(b"AT+UHTTP=0,20,2,1",reply=REPLY_OK)) # Mapping the embedded HTTP client to the HTTP POST method
@@ -128,9 +135,17 @@ def uhttp_setup(payload):
     
     # print(fona._send_check_reply(b"AT+UHTTPC=0,5,"/post","post.ffs","name_post=MyName&age_post=30",0",reply=REPLY_OK)) # Set HTTP data to 0 bytes
 
-    print(fona._send_check_reply(b"AT+UHTTPC=0,4,\"/post\", \"result.txt\",\"postdata.txt\",1",reply=REPLY_OK)) # Send HTTP POST
+    logger.info("SUBMIT POST COMMAND IN JSON FORMAT - 4 STORE ANSWER IN RESULT.TXT")
+    # print(fona._send_check_reply(b"AT+UHTTPC=0,4,\"/post\", \"responseFile.txt\",\"postContent.txt\",4",reply=REPLY_OK)) # Send HTTP POST
+    # print(fona._send_check_reply(b"AT+UHTTPC=0,5,\"marc.ecs.soton.ac.uk:/postin\",\"responseFile.txt\",\"4G message from Sherif\",1",reply=REPLY_OK))
+    print(fona._send_check_reply(b"AT+UHTTPC=0,5,\"/postin\",\"responseFile.txt\",\"4G message from Sherif\",1",reply=REPLY_OK))
 
-    print(fona._send_check_reply(b"AT+URDFILE=\"result.txt\"",reply=REPLY_OK)) # check the server's reply
+    # not working UHTTPER: 0, 3, 11
+    # error class = HTTP Protocol Error Class = 3
+    # Error Result Code = 11 = Server Connection Error
+
+    logger.info("READING HTTP RESPONSE")
+    print(fona._send_check_reply(b"AT+URDFILE=\"responseFile.txt\"",reply=REPLY_OK)) # check the server's reply
     fona._read_line()
 
     # print(fona._send_check_reply(b"AT+UHTTPC=0,1,\"/\",\"result.txt\"",reply=REPLY_OK)) 
@@ -138,6 +153,56 @@ def uhttp_setup(payload):
     # print(fona._send_check_reply(b"AT+URDFILE=\"result.txt\"",reply=REPLY_OK)) # check the server's reply
 
     # print(fona._send_check_reply(b"AT+UHTTP=0,6",reply=REPLY_OK)) # Send HTTP POST
+
+
+def uhttp_post_direct_link(payload) -> bool:
+
+    # set profile ID to 0
+    logger.info("UHTTP POST SETUP - DIRECT LINK")
+
+    logger.info("SET VERBOSE ERROR CODES")
+    if not fona._send_check_reply(b"AT+CMEE=2",reply=REPLY_OK): # Set verbose error result codes
+        return False
+    time.sleep(0.1)
+
+    logger.info("RESET HTTP PROFILE #0")
+    if not fona._send_check_reply(b"AT+UHTTP=0",reply=REPLY_OK): # Reset HTTP profile #0
+        return False
+    time.sleep(0.1)
+
+    logger.info("SET URL")
+    if not fona._send_check_reply(b"AT+UHTTP=0,1,\"http://marc.ecs.soton.ac.uk/postin\"",reply=REPLY_OK): # Set URL
+        return False
+    time.sleep(0.1)
+
+    logger.info("SET PORT OF HTTP REQUEST TO 80")
+    if not fona._send_check_reply(b"AT+UHTTP=0,5,80",reply=REPLY_OK): # Set port of HTTP request to 80
+        return False
+    time.sleep(0.1)
+
+    # logger.info("SET HTTP METHOD")
+    # if not fona._send_check_reply(b"AT+UHTTP=0,20,2,1",reply=REPLY_OK): # Set HTTP method to POST
+    #     return False
+    # time.sleep(0.1)
+
+    logger.info("POST DATA IN DIRECT LINK")
+    # print(fona._send_check_reply(b"AT+UHTTPC=0,7\"http://marc.ecs.soton.ac.uk/postin\", 4,"+str(len(payload)),reply=REPLY_OK)) # Send HTTP POST
+
+    # fona._uart_write(bytearray(payload)) - CRITICAL DO NOT UNCOMMENT THIS LINE!! WILL DAMAGE BOARD AND NEED FIRMWARE REFLASH
+    # time.sleep(0.1)
+
+    # logger.info("READ HTTP RESPONSE")
+    # print(fona._send_check_reply(b"AT+UHTTP=0,8",reply=REPLY_OK)) # Read HTTP response
+    # if not fona._send_check_reply(b"AT+UHTTP=0,8",reply=REPLY_OK): # Read HTTP response
+    #     return False    
+    # time.sleep(0.1)
+
+    # logger.info("TERMINATE HTTP PROFILE")
+    # if not fona._send_check_reply(b"AT+UHTTP=0,9",reply=REPLY_OK): # Terminate HTTP profile
+    #     return False
+    # time.sleep(0.1)
+
+    return True
 
 
 
@@ -155,7 +220,7 @@ def http_post(payload) -> bool:
     logger.info("HTTP SERVICES ENABLED")
 
     logger.info("SETTING UP URL")
-    if not fona._send_check_reply(b"AT+HTTPPARA=\"URL\",\"http://iotgate.ecs.soton.ac.uk/postin\"",reply=REPLY_OK):
+    if not fona._send_check_reply(b"AT+HTTPPARA=\"URL\",\"http://marc.ecs.soton.ac.uk/postin\"",reply=REPLY_OK):
         return False       # set HTTP parameters value
     time.sleep(0.1)
 
@@ -258,6 +323,12 @@ if __name__ == '__main__':
     payload_paths = []
 
     logger.info("ENABLING GSM COMMS")
+    
+
+    # GSM_UART.write(b"AT\r\n")
+    # time.sleep(0.1)
+    # GSM_UART.readline()
+
 
     fona = FONA(GSM_UART, GSM_RST_PIN, debug=True)
 
@@ -287,7 +358,9 @@ if __name__ == '__main__':
     print(fona._send_check_reply(b"AT+CGACT=1,1",reply=REPLY_OK))  # Activate PDP context 1 - returns OK
     print(fona._send_check_reply(b"AT+CGDCONT?",reply=b"CGDCONT:"))  # return IPV4 Address
 
-    uhttp_setup(json.dumps(test_payload))
+    uhttp_setup(json.dumps(test_payload))# -- temporary
+
+    # uhttp_post_direct_link(json.dumps(test_payload))
 
 
     # print(fona._send_check_reply(b"AT+CGDCONT=1,\"IP\",\"TM\"",reply=REPLY_OK))  # Set PDP context 1 - returns OK
@@ -354,4 +427,18 @@ if __name__ == '__main__':
 
     # shutdown()
 
+# ========================================================================================================
 
+# Reference links for firmware update 
+#https://content.u-blox.com/sites/default/files/documents/LARA-R6-L6-01B-IP_IN_UBXDOC-686885345-1861.pdf
+#https://content.u-blox.com/sites/default/files/documents/LEXI-R520-SARA-R5-FW-Update_AppNote_UBX-20033314.pdf
+#https://www.u-blox.com/en/product/lara-r6-series?legacy=Current#Documentation-&-resources
+
+# Evaluation Software - Evaluation software for LARA-R6 series
+#https://www.u-blox.com/en/product/lara-r6-series?legacy=Current#Documentation-&-resources
+
+
+# Reference links for HTTP POST
+# https://content.u-blox.com/sites/default/files/documents/LARA-R6-L6_ATCommands_UBX-21046719.pdf
+# http_command - allowed values for LARA-L6/:LARA-R6 - 0,1,2,3,4,5 - DO NOT USE 6 and 7!!
+# possible APN not set correctly 
