@@ -113,12 +113,12 @@ def uhttp_setup(payload):
     # print(fona._send_check_reply(b"AT+UPSND=0,0",reply=REPLY_OK)) # get the IP address
 
     logger.info("WRITE PAYLOAD TO FILE")
-    print(fona._send_check_reply(b"AT+UDWNFILE=\"postContent.txt\",11",reply=REPLY_OK))
+    print(fona._send_check_reply(b"AT+UDWNFILE=\"postFile.txt\","+str(len(payload)),reply=REPLY_OK))
 
     fona._uart_write(bytearray(payload))
 
     logger.info("Check data is present in file")
-    print(fona._send_check_reply(b"AT+URDFILE=\"postContent.txt\"",reply=REPLY_OK))
+    print(fona._send_check_reply(b"AT+URDFILE=\"postFile.txt\"",reply=REPLY_OK))
 
     logger.info("RESET HTTP PROFILE #0")
     print(fona._send_check_reply(b"AT+UHTTP=0",reply=REPLY_OK)) # Reset HTTP profile #0
@@ -137,8 +137,8 @@ def uhttp_setup(payload):
 
     logger.info("SUBMIT POST COMMAND IN JSON FORMAT - 4 STORE ANSWER IN RESULT.TXT")
     # print(fona._send_check_reply(b"AT+UHTTPC=0,4,\"/post\", \"responseFile.txt\",\"postContent.txt\",4",reply=REPLY_OK)) # Send HTTP POST
-    # print(fona._send_check_reply(b"AT+UHTTPC=0,5,\"marc.ecs.soton.ac.uk:/postin\",\"responseFile.txt\",\"4G message from Sherif\",1",reply=REPLY_OK))
-    print(fona._send_check_reply(b"AT+UHTTPC=0,5,\"/postin\",\"responseFile.txt\",\"4G message from Sherif\",1",reply=REPLY_OK))
+    print(fona._send_check_reply(b"AT+UHTTPC=0,4,\"/postin\",\"resultResponseFile.txt\",\"postFile.txt\",4",reply=REPLY_OK))
+    # print(fona._send_check_reply(b"AT+UHTTPC=0,5,\"/postin\",\"responseFile.txt\",\"4G message from Sherif\",1",reply=REPLY_OK)) -- works
 
     # not working UHTTPER: 0, 3, 11
     # error class = HTTP Protocol Error Class = 3
