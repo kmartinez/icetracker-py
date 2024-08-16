@@ -25,7 +25,7 @@ SERVER_URL = "http://iotgate.ecs.soton.ac.uk/postin"
 
 # http_payload = '{"sats": 12, "temp": 2.35, "altitude": 105.637, "timestamp": "2023-09-01T15:01:02", "batv": 3.92, "latitude": "64.1024530713333333", "rover_id": 19, "longitude": "-16.3378673346666667"}'
 # json_payload = bytearray(http_payload)
-test_payload = [{"batv": "3.92", "latitude": "64.1024530713333333", "rover_id": "19", "longitude": "-16.3378673346666667"}]
+test_payload = [{"batv": "3.92", "latitude": "64.10245307133333", "rover_id": "19", "longitude": "-16.33786733466667"}]
 message_payload = "post data from 4g LARA module - Sherif"
 # http_payload = ["abcdef-glacsweb"]
 # http_payload = []
@@ -331,9 +331,10 @@ if __name__ == '__main__':
     logger.info("ENABLING GSM COMMS")
     
 
-    # GSM_UART.write(b"AT\r\n")
-    # time.sleep(0.1)
-    # GSM_UART.readline()
+    #GSM_UART.write(b"AT\r\n")
+    #GSM_UART.write(b"AT+CFUN=16")
+    #time.sleep(0.1)
+    #print(GSM_UART.readline())
 
 
     fona = FONA(GSM_UART, GSM_RST_PIN, debug=True)
