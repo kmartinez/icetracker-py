@@ -180,7 +180,7 @@ class FONA:
         self._rst.value = True
         time.sleep(0.01)
         self._rst.value = False
-        time.sleep(0.1)
+        time.sleep(0.2)
         self._rst.value = True
 
     @property
