@@ -123,9 +123,9 @@ async def receive_packet() -> RadioPacket:
     packet = None
     while packet is None:
         marker = None
-        logger.info("Radio waiting for packet marker")
+        logger.debug("Radio waiting for packet marker")
         await UART.async_read_until_forever(bytes([0x80,0x80]))
-        logger.info("Packet marker received")
+        logger.debug("Packet marker received")
         size = await UART.async_read_forever(4)
         # print(size)
         logger.debug(f"PACKET_SIZE_RAW: {binascii.hexlify(size)}")
