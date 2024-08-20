@@ -106,11 +106,13 @@ class FONA:
     # pylint: disable=too-many-branches, too-many-statements
     def _init_fona(self) -> bool:
         """Initializes FONA module."""
-        
+        #self.reset()
 
         Drivers.PSU.enable_fona()
-        time.sleep(5)
+        time.sleep(2)
+
         self.reset()
+        time.sleep(1)
         timeout = 7000
         while timeout > 0:
             if self._send_check_reply(CMD_AT, reply=REPLY_OK):
