@@ -35,9 +35,9 @@ MAX_SENT_DATA_FILES = 30
 #not used for now - hard coded later
 SERVER_URL = "http://marc.ecs.soton.ac.uk/postin"
 
-# http_payload = '{"sats": 12, "temp": 2.35, "altitude": 105.637, "timestamp": "2023-09-01T15:01:02", "batv": 3.92, "latitude": "64.1024530713333333", "rover_id": 19, "longitude": "-16.3378673346666667"}'
+# http_payload = '{"sats": 12, "temp": -2.35, "altitude": 105.637, "timestamp": "2023-09-01T15:01:02", "batv": 3.92, "latitude": "64.1024530713333333", "rover_id": 19, "longitude": "-16.3378673346666667"}'
 # json_payload = bytearray(http_payload)
-test_payload = [{"batv": "3.92", "latitude": "64.123456789", "rover_id": "11", "longitude": "-16.123456789"}]
+test_payload = [{"batv": "3.92", "latitude": "64.9999999", "rover_id": "19", "longitude": "-16.999999789"}]
 message_payload = "post data from 4g LARA module - Sherif"
 
 
@@ -110,16 +110,10 @@ if __name__ == '__main__':
 
     logger.info("ENABLING 4G GSM COMMS")
     
-    fona = FONA(GSM_UART, GSM_RST_PIN, debug=True)
+    fona = FONA(GSM_UART, GSM_RST_PIN, debug=False)
 
     logger.info("FONA initialized")
-    # a quick check we see an OK
-    logger.info("AT test")
-    GSM_UART.write(b"AT\r\n")
-    #GSM_UART.write(b"AT+CFUN=16")
-    time.sleep(0.1)
-    print(GSM_UART.readline())
-    print(GSM_UART.readline())
+    
     
     fona._send_check_reply(b"AT+CMEE?",reply=REPLY_OK) # we want zero - not lots of reports
 
