@@ -21,7 +21,7 @@ logger = logging.getLogger("DEVICE")
 # GSM_ENABLE_PIN: DigitalInOut = DigitalInOut(board.A0)
 # GSM_ENABLE_PIN.switch_to_output(value=False)
 
-GSM_UART: UART = UART(board.A5, board.D6, baudrate=9600)
+GSM_UART: UART = UART(board.A5, board.D6, baudrate=115200)
 '''GSM FONA UART'''
 # GSM_KEY = DigitalInOut(board.D5) # can be pinned to GND
 '''GSM KEY PIN'''
